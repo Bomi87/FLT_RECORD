@@ -1,173 +1,1897 @@
-/************************************************************
- * FLIGHT DATA ANALYSIS
- * Google Apps Script Backend
- *
- * MONTHLY ANALYSIS:
- * All years are grouped by calendar month.
- *
- * Example:
- * 2019 JUL + 2021 JUL + 2024 JUL + 2026 JUL
- * -> JUL average
- ************************************************************/
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+/>
+
+<title>Flight Data Analysis</title>
 
 
-const CONFIG = {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
-  SPREADSHEET_ID:
-    '1nXo9MMBPtoBUz7GZPrijiva-fgYcbidmvZ_VPddUpmc',
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
-  RAW_SHEET_NAME:
-    'RAW',
 
-  /* Taxi absolute operational limit */
-  TAXI_MIN_MINUTES:
-    1,
+<link
+  rel="preconnect"
+  href="https://fonts.googleapis.com"
+/>
 
-  TAXI_MAX_MINUTES:
-    60,
+<link
+  rel="preconnect"
+  href="https://fonts.gstatic.com"
+  crossorigin
+/>
 
-  /* IQR */
-  IQR_MULTIPLIER:
-    1.5,
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+  rel="stylesheet"
+/>
 
-  MIN_IQR_SAMPLE:
-    4,
 
-  /* Missing Fuel Burn */
-  CALCULATE_MISSING_FUEL_BURN:
-    true,
+<style>
 
-  FOD_HEADERS: [
+/* =========================================================
+   ROOT
+========================================================= */
 
-    'FOD',
+:root {
 
-    'Fuel-Remain',
+  --bg:
+    #07111e;
 
-    'Fuel Remain',
+  --panel:
+    #101f34;
 
-    'FUEL REMAIN',
+  --line:
+    rgba(255,255,255,.09);
 
-    'Landing Fuel',
+  --text:
+    #f5f8fc;
 
-    'LANDING FUEL'
+  --muted:
+    #a0b1c6;
 
-  ]
+  --blue:
+    #4d8cff;
 
-};
+  --cyan:
+    #2ad6e5;
+
+  --amber:
+    #f5b642;
+
+  --green:
+    #41d398;
+
+  --red:
+    #ff627a;
+
+}
 
 
 /* =========================================================
-   WEB APP
+   GENERAL
 ========================================================= */
 
-function doGet(e) {
+* {
 
-  try {
+  box-sizing:
+    border-box;
 
-    const p =
-      e && e.parameter
-        ? e.parameter
-        : {};
+}
 
 
-    const action =
-      String(
-        p.action || 'search'
-      ).trim();
+html {
+
+  scroll-behavior:
+    smooth;
+
+}
 
 
-    let result;
+body {
+
+  margin:
+    0;
+
+  min-height:
+    100vh;
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  color:
+    var(--text);
+
+  background:
+
+    radial-gradient(
+      circle at 10% 0%,
+      rgba(70,120,255,.17),
+      transparent 30%
+    ),
+
+    radial-gradient(
+      circle at 90% 5%,
+      rgba(28,208,222,.08),
+      transparent 27%
+    ),
+
+    linear-gradient(
+      180deg,
+      #07111e,
+      #091625
+    );
+
+}
 
 
-    switch (action) {
+.app {
+
+  width:
+    min(
+      1600px,
+      calc(100% - 32px)
+    );
+
+  margin:
+    auto;
+
+  padding:
+    25px 0 60px;
+
+}
 
 
-      case 'search':
+/* =========================================================
+   TOP
+========================================================= */
 
-        result =
-          searchRoute_({
+.topbar {
 
-            dep:
-              p.dep || '',
+  display:
+    flex;
 
-            arr:
-              p.arr || '',
+  justify-content:
+    space-between;
 
-            tail:
-              p.tail || 'ALL',
+  align-items:
+    center;
 
-            fromDate:
-              p.fromDate || '',
+  margin-bottom:
+    22px;
 
-            toDate:
-              p.toDate || ''
-
-          });
-
-        break;
+}
 
 
-      case 'tails':
+.brand {
 
-        result =
-          getTailList_();
+  font-size:
+    25px;
 
-        break;
+  font-weight:
+    800;
+
+}
 
 
-      case 'ping':
+.status {
 
-        result = {
+  display:
+    flex;
 
-          ok:
-            true,
+  align-items:
+    center;
 
-          message:
-            'Flight Data Analysis API is running',
+  gap:
+    8px;
 
-          timestamp:
-            new Date().toISOString()
+  color:
+    var(--muted);
+
+  font-size:
+    14px;
+
+}
+
+
+.status-dot {
+
+  width:
+    10px;
+
+  height:
+    10px;
+
+  border-radius:
+    50%;
+
+  background:
+    var(--green);
+
+}
+
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.hero {
+
+  padding:
+    28px 30px 30px;
+
+  border:
+    1px solid
+    var(--line);
+
+  border-radius:
+    20px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #142945,
+      #09192c
+    );
+
+}
+
+
+.eyebrow {
+
+  color:
+    var(--cyan);
+
+  font-size:
+    13px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    1.6px;
+
+}
+
+
+.hero-description {
+
+  margin-top:
+    9px;
+
+  color:
+    var(--text);
+
+  font-size:
+    19px;
+
+  font-weight:
+    600;
+
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.search-grid {
+
+  display:
+    grid;
+
+  grid-template-columns:
+    1fr
+    46px
+    1fr
+    1fr
+    1fr
+    1fr
+    auto;
+
+  gap:
+    12px;
+
+  margin-top:
+    27px;
+
+  align-items:
+    end;
+
+}
+
+
+.field label {
+
+  display:
+    block;
+
+  margin-bottom:
+    7px;
+
+  color:
+    var(--muted);
+
+  font-size:
+    13px;
+
+  font-weight:
+    700;
+
+}
+
+
+input,
+select {
+
+  width:
+    100%;
+
+  height:
+    49px;
+
+  padding:
+    0 14px;
+
+  border:
+    1px solid
+    rgba(255,255,255,.12);
+
+  border-radius:
+    10px;
+
+  background:
+    rgba(255,255,255,.055);
+
+  color:
+    white;
+
+  font-family:
+    inherit;
+
+  font-size:
+    15px;
+
+}
+
+
+select option {
+
+  background:
+    #122137;
+
+}
+
+
+input:focus,
+select:focus {
+
+  outline:
+    none;
+
+  border-color:
+    var(--blue);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(77,140,255,.1);
+
+}
+
+
+.route-arrow {
+
+  height:
+    49px;
+
+  display:
+    flex;
+
+  justify-content:
+    center;
+
+  align-items:
+    center;
+
+  color:
+    var(--cyan);
+
+  font-size:
+    25px;
+
+}
+
+
+.search-btn {
+
+  height:
+    49px;
+
+  padding:
+    0 27px;
+
+  border:
+    none;
+
+  border-radius:
+    10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #377cff,
+      #21bfdc
+    );
+
+  color:
+    white;
+
+  font-family:
+    inherit;
+
+  font-size:
+    14px;
+
+  font-weight:
+    800;
+
+  cursor:
+    pointer;
+
+}
+
+
+.search-btn:disabled {
+
+  opacity:
+    .55;
+
+  cursor:
+    default;
+
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.loading {
+
+  display:
+    none;
+
+  padding:
+    30px;
+
+  text-align:
+    center;
+
+  color:
+    var(--muted);
+
+  font-size:
+    16px;
+
+}
+
+
+/* =========================================================
+   ROUTE
+========================================================= */
+
+.route-header {
+
+  display:
+    none;
+
+  margin:
+    29px 2px 15px;
+
+}
+
+
+.route-name {
+
+  font-size:
+    29px;
+
+  font-weight:
+    800;
+
+}
+
+
+.route-meta {
+
+  margin-top:
+    6px;
+
+  color:
+    var(--muted);
+
+  font-size:
+    14px;
+
+}
+
+
+/* =========================================================
+   KPI
+========================================================= */
+
+.kpi-grid {
+
+  display:
+    none;
+
+  grid-template-columns:
+    repeat(
+      6,
+      1fr
+    );
+
+  gap:
+    13px;
+
+  margin-bottom:
+    18px;
+
+}
+
+
+.kpi {
+
+  min-height:
+    130px;
+
+  padding:
+    19px;
+
+  border:
+    1px solid
+    var(--line);
+
+  border-radius:
+    15px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #13243b,
+      #0b192b
+    );
+
+}
+
+
+.kpi-label {
+
+  color:
+    var(--muted);
+
+  font-size:
+    13px;
+
+  font-weight:
+    700;
+
+}
+
+
+.kpi-value {
+
+  margin-top:
+    9px;
+
+  font-size:
+    30px;
+
+  font-weight:
+    800;
+
+}
+
+
+.kpi-sub {
+
+  margin-top:
+    7px;
+
+  color:
+    #8294aa;
+
+  font-size:
+    12px;
+
+}
+
+
+/* =========================================================
+   PANELS
+========================================================= */
+
+.chart-grid {
+
+  display:
+    none;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap:
+    16px;
+
+  margin-bottom:
+    16px;
+
+}
+
+
+.panel {
+
+  padding:
+    22px;
+
+  border:
+    1px solid
+    var(--line);
+
+  border-radius:
+    17px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #112138,
+      #0a182a
+    );
+
+}
+
+
+.panel-title {
+
+  font-size:
+    20px;
+
+  font-weight:
+    800;
+
+}
+
+
+.panel-sub {
+
+  margin-top:
+    5px;
+
+  color:
+    var(--muted);
+
+  font-size:
+    13px;
+
+}
+
+
+.chart-wrap {
+
+  position:
+    relative;
+
+  height:
+    390px;
+
+  margin-top:
+    15px;
+
+}
+
+
+.taxi-panel {
+
+  display:
+    none;
+
+  margin-bottom:
+    16px;
+
+}
+
+
+.taxi-chart-wrap {
+
+  position:
+    relative;
+
+  height:
+    360px;
+
+  margin-top:
+    15px;
+
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.table-panel {
+
+  display:
+    none;
+
+  margin-top:
+    17px;
+
+}
+
+
+.table-head {
+
+  display:
+    flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    center;
+
+  margin-bottom:
+    15px;
+
+}
+
+
+.record-count {
+
+  color:
+    var(--muted);
+
+  font-size:
+    13px;
+
+}
+
+
+.table-scroll {
+
+  max-height:
+    670px;
+
+  overflow:
+    auto;
+
+}
+
+
+table {
+
+  width:
+    100%;
+
+  min-width:
+    1100px;
+
+  border-collapse:
+    collapse;
+
+}
+
+
+th {
+
+  position:
+    sticky;
+
+  top:
+    0;
+
+  z-index:
+    4;
+
+  background:
+    #101e33;
+
+  color:
+    #a2b2c6;
+
+  padding:
+    15px 11px;
+
+  font-size:
+    13px;
+
+  text-align:
+    center;
+
+}
+
+
+td {
+
+  padding:
+    15px 11px;
+
+  text-align:
+    center;
+
+  color:
+    #d4deea;
+
+  border-bottom:
+    1px solid
+    rgba(255,255,255,.05);
+
+  font-size:
+    14px;
+
+}
+
+
+tbody tr:hover {
+
+  background:
+    rgba(75,133,255,.06);
+
+}
+
+
+.outlier {
+
+  color:
+    var(--red) !important;
+
+  font-weight:
+    700;
+
+}
+
+
+.no-data {
+
+  color:
+    #65778d;
+
+}
+
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.empty {
+
+  margin-top:
+    20px;
+
+  padding:
+    75px 20px;
+
+  text-align:
+    center;
+
+  color:
+    var(--muted);
+
+  border:
+    1px dashed
+    rgba(255,255,255,.11);
+
+  border-radius:
+    17px;
+
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media(
+  max-width:1200px
+) {
+
+  .kpi-grid {
+
+    grid-template-columns:
+      repeat(
+        3,
+        1fr
+      );
+
+  }
+
+
+  .search-grid {
+
+    grid-template-columns:
+      repeat(
+        3,
+        1fr
+      );
+
+  }
+
+
+  .route-arrow {
+
+    display:
+      none;
+
+  }
+
+}
+
+
+@media(
+  max-width:800px
+) {
+
+  .app {
+
+    width:
+      calc(
+        100% - 18px
+      );
+
+  }
+
+
+  .chart-grid {
+
+    grid-template-columns:
+      1fr;
+
+  }
+
+
+  .kpi-grid {
+
+    grid-template-columns:
+      repeat(
+        2,
+        1fr
+      );
+
+  }
+
+
+  .search-grid {
+
+    grid-template-columns:
+      1fr;
+
+  }
+
+
+  .chart-wrap,
+  .taxi-chart-wrap {
+
+    height:
+      330px;
+
+  }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+
+<!-- =======================================================
+     HEADER
+======================================================= -->
+
+<div class="topbar">
+
+  <div class="brand">
+    ✈ Flight Data Analysis
+  </div>
+
+
+  <div class="status">
+
+    <span
+      id="statusDot"
+      class="status-dot"
+    ></span>
+
+    <span id="statusText">
+      System Ready
+    </span>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     SEARCH
+======================================================= -->
+
+<div class="hero">
+
+  <div class="eyebrow">
+    ROUTE ANALYTICS
+  </div>
+
+
+  <div class="hero-description">
+    Flight time, taxi and fuel performance analysis
+  </div>
+
+
+  <div class="search-grid">
+
+
+    <div class="field">
+
+      <label>
+        DEPARTURE
+      </label>
+
+      <input
+        id="dep"
+        maxlength="4"
+        placeholder="RKSS"
+        autocomplete="off"
+      >
+
+    </div>
+
+
+    <div class="route-arrow">
+      →
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        ARRIVAL
+      </label>
+
+      <input
+        id="arr"
+        maxlength="4"
+        placeholder="RJAA"
+        autocomplete="off"
+      >
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        TAIL
+      </label>
+
+      <select id="tail">
+
+        <option value="ALL">
+          ALL TAIL
+        </option>
+
+      </select>
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        FROM
+      </label>
+
+      <input
+        id="fromDate"
+        type="date"
+      >
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        TO
+      </label>
+
+      <input
+        id="toDate"
+        type="date"
+      >
+
+    </div>
+
+
+    <button
+      id="analyzeBtn"
+      class="search-btn"
+      onclick="searchRoute()"
+    >
+      ANALYZE
+    </button>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     LOADING
+======================================================= -->
+
+<div
+  id="loading"
+  class="loading"
+>
+  Analyzing flight data...
+</div>
+
+
+
+<!-- =======================================================
+     ROUTE
+======================================================= -->
+
+<div
+  id="routeHeader"
+  class="route-header"
+>
+
+  <div
+    id="routeName"
+    class="route-name"
+  >
+  </div>
+
+
+  <div
+    id="routeMeta"
+    class="route-meta"
+  >
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     KPI
+======================================================= -->
+
+<div
+  id="kpiGrid"
+  class="kpi-grid"
+>
+
+
+  <div class="kpi">
+
+    <div class="kpi-label">
+      FLIGHTS
+    </div>
+
+    <div
+      id="kpiFlights"
+      class="kpi-value"
+    >
+      -
+    </div>
+
+    <div class="kpi-sub">
+      Historical records
+    </div>
+
+  </div>
+
+
+  <div class="kpi">
+
+    <div class="kpi-label">
+      AVG FLIGHT TIME
+    </div>
+
+    <div
+      id="kpiFlight"
+      class="kpi-value"
+    >
+      -
+    </div>
+
+    <div
+      id="kpiFlightSub"
+      class="kpi-sub"
+    >
+    </div>
+
+  </div>
+
+
+  <div class="kpi">
+
+    <div class="kpi-label">
+      AVG BLOCK TIME
+    </div>
+
+    <div
+      id="kpiBlock"
+      class="kpi-value"
+    >
+      -
+    </div>
+
+    <div
+      id="kpiBlockSub"
+      class="kpi-sub"
+    >
+    </div>
+
+  </div>
+
+
+  <div class="kpi">
+
+    <div class="kpi-label">
+      AVG DEP TAXI
+    </div>
+
+    <div
+      id="kpiDepTaxi"
+      class="kpi-value"
+    >
+      -
+    </div>
+
+    <div
+      id="kpiDepTaxiSub"
+      class="kpi-sub"
+    >
+    </div>
+
+  </div>
+
+
+  <div class="kpi">
+
+    <div class="kpi-label">
+      AVG ARR TAXI
+    </div>
+
+    <div
+      id="kpiArrTaxi"
+      class="kpi-value"
+    >
+      -
+    </div>
+
+    <div
+      id="kpiArrTaxiSub"
+      class="kpi-sub"
+    >
+    </div>
+
+  </div>
+
+
+  <div class="kpi">
+
+    <div class="kpi-label">
+      AVG FUEL BURN
+    </div>
+
+    <div
+      id="kpiFuel"
+      class="kpi-value"
+    >
+      -
+    </div>
+
+    <div
+      id="kpiFuelSub"
+      class="kpi-sub"
+    >
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     MONTHLY FLIGHT / FUEL
+======================================================= -->
+
+<div
+  id="chartGrid"
+  class="chart-grid"
+>
+
+
+  <div class="panel">
+
+    <div class="panel-title">
+      Monthly Flight Time
+    </div>
+
+    <div class="panel-sub">
+      Historical average by calendar month
+    </div>
+
+
+    <div class="chart-wrap">
+
+      <canvas
+        id="flightChart"
+      ></canvas>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="panel">
+
+    <div class="panel-title">
+      Monthly Fuel Burn
+    </div>
+
+    <div class="panel-sub">
+      Historical average by calendar month
+    </div>
+
+
+    <div class="chart-wrap">
+
+      <canvas
+        id="fuelChart"
+      ></canvas>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     TAXI
+======================================================= -->
+
+<div
+  id="taxiPanel"
+  class="panel taxi-panel"
+>
+
+  <div class="panel-title">
+    Monthly Taxi Time
+  </div>
+
+  <div class="panel-sub">
+    Historical departure and arrival taxi averages by calendar month
+  </div>
+
+
+  <div class="taxi-chart-wrap">
+
+    <canvas
+      id="taxiChart"
+    ></canvas>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     MONTHLY TABLE
+======================================================= -->
+
+<div
+  id="monthlyPanel"
+  class="panel table-panel"
+>
+
+  <div class="panel-title">
+    Monthly Performance
+  </div>
+
+  <div class="panel-sub">
+    Outlier-adjusted historical averages by calendar month
+  </div>
+
+
+  <div class="table-scroll">
+
+    <table>
+
+      <thead>
+
+        <tr>
+
+          <th>MONTH</th>
+
+          <th>FLIGHTS</th>
+
+          <th>USED FLT</th>
+
+          <th>AVG FLT TIME</th>
+
+          <th>AVG BLOCK</th>
+
+          <th>DEP TAXI</th>
+
+          <th>ARR TAXI</th>
+
+          <th>AVG FUEL BURN</th>
+
+        </tr>
+
+      </thead>
+
+
+      <tbody
+        id="monthlyBody"
+      >
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     FLIGHT HISTORY
+======================================================= -->
+
+<div
+  id="historyPanel"
+  class="panel table-panel"
+>
+
+  <div class="table-head">
+
+    <div>
+
+      <div class="panel-title">
+        Flight History
+      </div>
+
+      <div class="panel-sub">
+        Individual historical records
+      </div>
+
+    </div>
+
+
+    <div
+      id="recordCount"
+      class="record-count"
+    >
+    </div>
+
+  </div>
+
+
+  <div class="table-scroll">
+
+    <table>
+
+      <thead>
+
+        <tr>
+
+          <th>DATE</th>
+
+          <th>REQ</th>
+
+          <th>A/C TYPE</th>
+
+          <th>TAIL</th>
+
+          <th>FLT TIME</th>
+
+          <th>BLOCK</th>
+
+          <th>DEP TAXI</th>
+
+          <th>ARR TAXI</th>
+
+          <th>RAMP OUT FUEL</th>
+
+          <th>FUEL BURN</th>
+
+          <th>FOD</th>
+
+        </tr>
+
+      </thead>
+
+
+      <tbody
+        id="historyBody"
+      >
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     EMPTY
+======================================================= -->
+
+<div
+  id="empty"
+  class="empty"
+>
+  출발지와 목적지를 입력해주세요.
+</div>
+
+
+</div>
+
+
+
+<script>
+
+/* =========================================================
+   API
+========================================================= */
+
+const API_URL =
+  'https://script.google.com/macros/s/AKfycbyp8dbHDa9oNpI8nAGJ-ywHo-nv80uKirarLUhc_hIHy7YCXlZm_1C9oye6TqLFZ-no/exec';
+
+
+/* =========================================================
+   CHART
+========================================================= */
+
+Chart.register(
+  ChartDataLabels
+);
+
+
+Chart.defaults.color =
+  '#9fb0c4';
+
+
+Chart.defaults.font.family =
+  'Inter';
+
+
+Chart.defaults.font.size =
+  13;
+
+
+Chart.defaults.borderColor =
+  'rgba(255,255,255,.06)';
+
+
+let flightChart =
+  null;
+
+
+let fuelChart =
+  null;
+
+
+let taxiChart =
+  null;
+
+
+/* =========================================================
+   INIT
+========================================================= */
+
+document.addEventListener(
+  'DOMContentLoaded',
+  () => {
+
+    setupInputs();
+
+    loadTailOptions();
+
+  }
+);
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+function setupInputs() {
+
+  [
+    'dep',
+    'arr'
+  ]
+  .forEach(
+    id => {
+
+      const el =
+        document
+          .getElementById(
+            id
+          );
+
+
+      el.addEventListener(
+        'input',
+        () => {
+
+          el.value =
+            el.value
+
+              .toUpperCase()
+
+              .replace(
+                /[^A-Z0-9]/g,
+                ''
+              )
+
+              .slice(
+                0,
+                4
+              );
+
+        }
+      );
+
+
+      el.addEventListener(
+        'keydown',
+        event => {
+
+          if (
+            event.key ===
+            'Enter'
+          ) {
+
+            searchRoute();
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   JSONP
+========================================================= */
+
+function jsonp(
+  params
+) {
+
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
+
+      const callback =
+        '__flight_' +
+        Date.now() +
+        '_' +
+        Math.floor(
+          Math.random() *
+          100000
+        );
+
+
+      const script =
+        document
+          .createElement(
+            'script'
+          );
+
+
+      const query =
+        new URLSearchParams({
+
+          ...params,
+
+          callback:
+            callback
+
+        });
+
+
+      script.src =
+        API_URL +
+        '?' +
+        query.toString();
+
+
+      const timer =
+        setTimeout(
+          () => {
+
+            clean();
+
+            reject(
+              new Error(
+                'API request timeout'
+              )
+            );
+
+          },
+          25000
+        );
+
+
+      function clean() {
+
+        clearTimeout(
+          timer
+        );
+
+
+        delete window[
+          callback
+        ];
+
+
+        if (
+          script.parentNode
+        ) {
+
+          script.remove();
+
+        }
+
+      }
+
+
+      window[
+        callback
+      ] =
+        data => {
+
+          clean();
+
+          resolve(
+            data
+          );
 
         };
 
-        break;
+
+      script.onerror =
+        () => {
+
+          clean();
+
+          reject(
+            new Error(
+              'API connection failed'
+            )
+          );
+
+        };
 
 
-      default:
-
-        throw new Error(
-          'Unknown action: ' +
-          action
+      document.body
+        .appendChild(
+          script
         );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   LOAD TAIL
+========================================================= */
+
+async function loadTailOptions() {
+
+  try {
+
+    const data =
+      await jsonp({
+
+        action:
+          'tails'
+
+      });
+
+
+    if (
+      !data.ok
+    ) {
+
+      return;
 
     }
 
 
-    return output_(
-      result,
-      p.callback
+    const select =
+      document
+        .getElementById(
+          'tail'
+        );
+
+
+    (
+      data.tails ||
+      []
+    )
+    .forEach(
+      tail => {
+
+        const option =
+          document
+            .createElement(
+              'option'
+            );
+
+
+        option.value =
+          tail;
+
+
+        option.textContent =
+          tail;
+
+
+        select.appendChild(
+          option
+        );
+
+      }
     );
 
 
-  } catch (err) {
+  } catch(err) {
 
-    return output_({
-
-      ok:
-        false,
-
-      error:
-        err.message,
-
-      stack:
-        err.stack || ''
-
-    },
-
-    e && e.parameter
-      ? e.parameter.callback
-      : ''
-
+    console.error(
+      err
     );
 
   }
@@ -176,96 +1900,62 @@ function doGet(e) {
 
 
 /* =========================================================
-   SEARCH ROUTE
+   SEARCH
 ========================================================= */
 
-function searchRoute_(params) {
+async function searchRoute() {
 
   const dep =
-    normalizeICAO_(
-      params.dep
-    );
-
-
-  const arr =
-    normalizeICAO_(
-      params.arr
-    );
-
-
-  if (!dep) {
-
-    throw new Error(
-      'Departure ICAO is required.'
-    );
-
-  }
-
-
-  if (!arr) {
-
-    throw new Error(
-      'Arrival ICAO is required.'
-    );
-
-  }
-
-
-  const tailFilter =
-    String(
-      params.tail || 'ALL'
+    valueOf(
+      'dep'
     )
-      .trim()
       .toUpperCase();
 
 
-  const fromDate =
-    params.fromDate
-      ? parseInputDate_(
-          params.fromDate
-        )
-      : null;
-
-
-  const toDate =
-    params.toDate
-      ? parseInputDate_(
-          params.toDate
-        )
-      : null;
-
-
-  const sheet =
-    getRawSheet_();
-
-
-  const range =
-    sheet.getDataRange();
-
-
-  const values =
-    range.getValues();
-
-
-  const display =
-    range.getDisplayValues();
+  const arr =
+    valueOf(
+      'arr'
+    )
+      .toUpperCase();
 
 
   if (
-    values.length < 2
+    dep.length !== 4 ||
+    arr.length !== 4
   ) {
 
-    return {
+    alert(
+      'Departure / Arrival ICAO를 4자리로 입력해주세요.'
+    );
 
-      ok:
-        true,
+    return;
 
-      route:
-        dep +
-        ' → ' +
-        arr,
+  }
 
-      filters: {
+
+  hideResults();
+
+
+  document
+    .getElementById(
+      'empty'
+    )
+    .style.display =
+      'none';
+
+
+  setLoading(
+    true
+  );
+
+
+  try {
+
+    const data =
+      await jsonp({
+
+        action:
+          'search',
 
         dep:
           dep,
@@ -274,2286 +1964,1726 @@ function searchRoute_(params) {
           arr,
 
         tail:
-          params.tail || 'ALL',
+          valueOf(
+            'tail'
+          ),
 
         fromDate:
-          params.fromDate || '',
+          valueOf(
+            'fromDate'
+          ),
 
         toDate:
-          params.toDate || ''
+          valueOf(
+            'toDate'
+          )
 
-      },
-
-      summary:
-        emptySummary_(),
-
-      monthly:
-        makeEmptyMonthly_(),
-
-      history:
-        []
-
-    };
-
-  }
+      });
 
 
-  const headers =
-    display[0]
-      .map(
-        value =>
-          String(
-            value || ''
-          ).trim()
+    if (
+      !data.ok
+    ) {
+
+      throw new Error(
+        data.error ||
+        'Backend Error'
       );
 
+    }
 
-  const map =
-    makeHeaderMap_(
-      headers
+
+    renderAll(
+      data
     );
 
 
-  validateRequiredHeaders_(
-    map
-  );
+  } catch(err) {
+
+    console.error(
+      err
+    );
 
 
-  const records =
-    [];
-
-
-  for (
-    let r = 1;
-    r < values.length;
-    r++
-  ) {
-
-    const raw =
-      values[r];
-
-
-    const disp =
-      display[r];
-
-
-    /* =====================================================
-       ROUTE
-    ===================================================== */
-
-    const depAirport =
-      getCell_(
-        disp,
-        map,
-        [
-
-          'DEP_AIRPORT',
-
-          'DEP AIRPORT',
-
-          'DEPARTURE AIRPORT'
-
-        ]
-      );
-
-
-    const arrAirport =
-      getCell_(
-        disp,
-        map,
-        [
-
-          'ARR_AIRPORT',
-
-          'ARR AIRPORT',
-
-          'ARRIVAL AIRPORT'
-
-        ]
-      );
-
-
-    const rowDep =
-      extractICAO_(
-        depAirport
-      );
-
-
-    const rowArr =
-      extractICAO_(
-        arrAirport
-      );
-
-
-    if (
-      rowDep !== dep ||
-      rowArr !== arr
-    ) {
-
-      continue;
-
-    }
-
-
-    /* =====================================================
-       TAIL
-    ===================================================== */
-
-    const tail =
-      getCell_(
-        disp,
-        map,
-        [
-
-          'AC_TAIL',
-
-          'AC TAIL',
-
-          'TAIL'
-
-        ]
-      );
-
-
-    if (
-      tailFilter !== 'ALL' &&
-
-      String(
-        tail || ''
-      )
-        .trim()
-        .toUpperCase()
-
-      !== tailFilter
-    ) {
-
-      continue;
-
-    }
-
-
-    /* =====================================================
-       DATE
-    ===================================================== */
-
-    const depDateRaw =
-      getCellRaw_(
-        raw,
-        map,
-        [
-
-          'DEP_DATE',
-
-          'DEP DATE'
-
-        ]
-      );
-
-
-    const depDate =
-      normalizeDate_(
-        depDateRaw
-      );
-
-
-    if (!depDate) {
-
-      continue;
-
-    }
-
-
-    if (
-      fromDate &&
-      depDate < fromDate
-    ) {
-
-      continue;
-
-    }
-
-
-    if (toDate) {
-
-      const end =
-        new Date(
-          toDate
+    const empty =
+      document
+        .getElementById(
+          'empty'
         );
 
 
-      end.setHours(
-        23,
-        59,
-        59,
-        999
-      );
+    empty.style.display =
+      'block';
 
 
-      if (
-        depDate > end
-      ) {
+    empty.textContent =
+      '데이터 조회 중 오류가 발생했습니다.';
 
-        continue;
 
-      }
+    alert(
+      err.message
+    );
 
-    }
 
+  } finally {
 
-    /* =====================================================
-       BASIC INFO
-    ===================================================== */
-
-    const requester =
-      getCell_(
-        disp,
-        map,
-        [
-
-          'REQUESTER',
-
-          'REQ'
-
-        ]
-      );
-
-
-    const aircraft =
-      getCell_(
-        disp,
-        map,
-        [
-
-          'AC_TYPE',
-
-          'AC TYPE',
-
-          'AIRCRAFT TYPE'
-
-        ]
-      );
-
-
-    /* =====================================================
-       FLIGHT TIME
-    ===================================================== */
-
-    const fltMinutes =
-      durationToMinutes_(
-        getCell_(
-          disp,
-          map,
-          [
-
-            'FLT time',
-
-            'FLT TIME',
-
-            'FLIGHT TIME'
-
-          ]
-        )
-      );
-
-
-    /* =====================================================
-       BLOCK TIME
-    ===================================================== */
-
-    const blockMinutes =
-      durationToMinutes_(
-        getCell_(
-          disp,
-          map,
-          [
-
-            'Block time',
-
-            'BLOCK TIME',
-
-            'BLOCKTIME'
-
-          ]
-        )
-      );
-
-
-    /* =====================================================
-       TAXI
-    ===================================================== */
-
-    const rampOutUTC =
-      getCell_(
-        disp,
-        map,
-        [
-
-          'Ramp-out_UTC',
-
-          'RAMP-OUT_UTC',
-
-          'RAMP OUT UTC',
-
-          'RAMPOUT UTC'
-
-        ]
-      );
-
-
-    const takeoffUTC =
-      getCell_(
-        disp,
-        map,
-        [
-
-          'Take-off_UTC',
-
-          'TAKE-OFF_UTC',
-
-          'TAKE OFF UTC',
-
-          'TAKEOFF UTC'
-
-        ]
-      );
-
-
-    const landOnUTC =
-      getCell_(
-        disp,
-        map,
-        [
-
-          'Land-on_UTC',
-
-          'LAND-ON_UTC',
-
-          'LAND ON UTC',
-
-          'LANDING UTC'
-
-        ]
-      );
-
-
-    const rampInUTC =
-      getCell_(
-        disp,
-        map,
-        [
-
-          'Ramp-in_UTC',
-
-          'RAMP-IN_UTC',
-
-          'RAMP IN UTC',
-
-          'RAMPIN UTC'
-
-        ]
-      );
-
-
-    const depTaxi =
-      clockDifferenceMinutes_(
-        rampOutUTC,
-        takeoffUTC
-      );
-
-
-    const arrTaxi =
-      clockDifferenceMinutes_(
-        landOnUTC,
-        rampInUTC
-      );
-
-
-    /* =====================================================
-       FUEL
-    ===================================================== */
-
-    const rampOutFuel =
-      parseNumber_(
-        getCell_(
-          disp,
-          map,
-          [
-
-            'Fuel-In Tank',
-
-            'FUEL-IN TANK',
-
-            'Fuel In Tank',
-
-            'FUEL IN TANK',
-
-            'RAMP OUT FUEL',
-
-            'RAMP-OUT FUEL'
-
-          ]
-        )
-      );
-
-
-    const fod =
-      parseNumber_(
-        getFirstMatchingHeaderValue_(
-          disp,
-          map,
-          CONFIG.FOD_HEADERS
-        )
-      );
-
-
-    let fuelBurn =
-      parseNumber_(
-        getCell_(
-          disp,
-          map,
-          [
-
-            'Fuel Burn',
-
-            'FUEL BURN',
-
-            'FUELBURN'
-
-          ]
-        )
-      );
-
-
-    /*
-     * Fuel Burn이 공란 또는 0이고
-     * Ramp Out Fuel / FOD가 존재하면 계산
-     */
-
-    if (
-
-      CONFIG
-        .CALCULATE_MISSING_FUEL_BURN &&
-
-      (
-        !isFiniteNumber_(
-          fuelBurn
-        ) ||
-
-        fuelBurn <= 0
-      ) &&
-
-      isFiniteNumber_(
-        rampOutFuel
-      ) &&
-
-      isFiniteNumber_(
-        fod
-      ) &&
-
-      rampOutFuel >= fod
-
-    ) {
-
-      fuelBurn =
-        rampOutFuel -
-        fod;
-
-    }
-
-
-    records.push({
-
-      date:
-        formatDate_(
-          depDate
-        ),
-
-      timestamp:
-        depDate.getTime(),
-
-      month:
-        depDate.getMonth() + 1,
-
-      requester:
-        requester,
-
-      aircraft:
-        aircraft,
-
-      tail:
-        tail,
-
-      fltMinutes:
-        fltMinutes,
-
-      fltTime:
-        minutesToHHMM_(
-          fltMinutes
-        ),
-
-      blockMinutes:
-        blockMinutes,
-
-      blockTime:
-        minutesToHHMM_(
-          blockMinutes
-        ),
-
-      depTaxi:
-        depTaxi,
-
-      arrTaxi:
-        arrTaxi,
-
-      rampOutFuel:
-        rampOutFuel,
-
-      fuelBurn:
-        fuelBurn,
-
-      fod:
-        fod
-
-    });
+    setLoading(
+      false
+    );
 
   }
 
-
-  records.sort(
-    (a,b) =>
-      a.timestamp -
-      b.timestamp
-  );
+}
 
 
-  /* =======================================================
-     OUTLIER
+/* =========================================================
+   RENDER ALL
+========================================================= */
 
-     중요:
-     전체 조회 노선의 데이터 분포에서 먼저 이상치 판단.
-     그 후 1~12월별 AVG 계산.
-  ======================================================= */
+function renderAll(
+  data
+) {
 
-  markIqrOutliers_(
-    records,
-    'fltMinutes',
-    'fltOutlier'
-  );
-
-
-  markIqrOutliers_(
-    records,
-    'blockMinutes',
-    'blockOutlier'
-  );
-
-
-  markIqrOutliers_(
-    records,
-    'fuelBurn',
-    'fuelBurnOutlier'
-  );
-
-
-  markTaxiOutliers_(
-    records,
-    'depTaxi',
-    'depTaxiOutlier'
-  );
-
-
-  markTaxiOutliers_(
-    records,
-    'arrTaxi',
-    'arrTaxiOutlier'
-  );
-
-
-  const summary =
-    makeSummary_(
-      records
-    );
+  const history =
+    data.history ||
+    [];
 
 
   const monthly =
-    makeMonthlySummary_(
-      records
-    );
-
-
-  return {
-
-    ok:
-      true,
-
-    generatedAt:
-      new Date()
-        .toISOString(),
-
-    route:
-      dep +
-      ' → ' +
-      arr,
-
-    filters: {
-
-      dep:
-        dep,
-
-      arr:
-        arr,
-
-      tail:
-        params.tail ||
-        'ALL',
-
-      fromDate:
-        params.fromDate ||
-        '',
-
-      toDate:
-        params.toDate ||
-        ''
-
-    },
-
-    summary:
-      summary,
-
-    monthly:
-      monthly,
-
-    history:
-      records
-
-  };
-
-}
-
-
-/* =========================================================
-   OVERALL SUMMARY
-========================================================= */
-
-function makeSummary_(
-  records
-) {
-
-  const flight =
-    cleanValues_(
-      records,
-      'fltMinutes',
-      'fltOutlier'
-    );
-
-
-  const block =
-    cleanValues_(
-      records,
-      'blockMinutes',
-      'blockOutlier'
-    );
-
-
-  const depTaxi =
-    cleanValues_(
-      records,
-      'depTaxi',
-      'depTaxiOutlier'
-    );
-
-
-  const arrTaxi =
-    cleanValues_(
-      records,
-      'arrTaxi',
-      'arrTaxiOutlier'
-    );
-
-
-  const fuel =
-    cleanValues_(
-      records,
-      'fuelBurn',
-      'fuelBurnOutlier'
-    );
-
-
-  return {
-
-    flights:
-      records.length,
-
-
-    avgFlightMinutes:
-      round1_(
-        average_(
-          flight
-        )
-      ),
-
-    avgFlightTime:
-      minutesToHHMM_(
-        average_(
-          flight
-        )
-      ),
-
-    flightSamples:
-      flight.length,
-
-    flightOutliers:
-      countFlag_(
-        records,
-        'fltOutlier'
-      ),
-
-
-    avgBlockMinutes:
-      round1_(
-        average_(
-          block
-        )
-      ),
-
-    avgBlockTime:
-      minutesToHHMM_(
-        average_(
-          block
-        )
-      ),
-
-    blockSamples:
-      block.length,
-
-    blockOutliers:
-      countFlag_(
-        records,
-        'blockOutlier'
-      ),
-
-
-    avgDepTaxi:
-      round1_(
-        average_(
-          depTaxi
-        )
-      ),
-
-    depTaxiSamples:
-      depTaxi.length,
-
-    depTaxiOutliers:
-      countFlag_(
-        records,
-        'depTaxiOutlier'
-      ),
-
-
-    avgArrTaxi:
-      round1_(
-        average_(
-          arrTaxi
-        )
-      ),
-
-    arrTaxiSamples:
-      arrTaxi.length,
-
-    arrTaxiOutliers:
-      countFlag_(
-        records,
-        'arrTaxiOutlier'
-      ),
-
-
-    avgFuelBurn:
-      round0_(
-        average_(
-          fuel
-        )
-      ),
-
-    fuelSamples:
-      fuel.length,
-
-    fuelOutliers:
-      countFlag_(
-        records,
-        'fuelBurnOutlier'
-      )
-
-  };
-
-}
-
-
-/* =========================================================
-   CALENDAR MONTH ANALYSIS
-   ALL YEARS -> JAN ... DEC
-========================================================= */
-
-function makeMonthlySummary_(
-  records
-) {
-
-  const groups =
-    {};
-
-
-  /*
-   * 1월~12월 미리 생성
-   * 운항이 없는 월도 X축에 유지됨
-   */
-
-  for (
-    let month = 1;
-    month <= 12;
-    month++
-  ) {
-
-    groups[month] = {
-
-      month:
-        month,
-
-      label:
-        month + '월',
-
-      flights:
-        0,
-
-      rows:
-        []
-
-    };
-
-  }
-
-
-  /*
-   * 연도는 무시하고
-   * 달(month)만 기준으로 묶는다.
-   */
-
-  records.forEach(
-    row => {
-
-      const month =
-        row.month;
-
-
-      if (
-        !month ||
-        !groups[month]
-      ) {
-
-        return;
-
-      }
-
-
-      groups[month]
-        .flights++;
-
-
-      groups[month]
-        .rows
-        .push(row);
-
-    }
-  );
-
-
-  return Object
-    .values(
-      groups
-    )
-
-    .sort(
-      (a,b) =>
-        a.month -
-        b.month
-    )
-
-    .map(
-      group => {
-
-        const rows =
-          group.rows;
-
-
-        const flight =
-          cleanValues_(
-            rows,
-            'fltMinutes',
-            'fltOutlier'
-          );
-
-
-        const block =
-          cleanValues_(
-            rows,
-            'blockMinutes',
-            'blockOutlier'
-          );
-
-
-        const depTaxi =
-          cleanValues_(
-            rows,
-            'depTaxi',
-            'depTaxiOutlier'
-          );
-
-
-        const arrTaxi =
-          cleanValues_(
-            rows,
-            'arrTaxi',
-            'arrTaxiOutlier'
-          );
-
-
-        const fuel =
-          cleanValues_(
-            rows,
-            'fuelBurn',
-            'fuelBurnOutlier'
-          );
-
-
-        return {
-
-          month:
-            group.month,
-
-          label:
-            group.label,
-
-          flights:
-            group.flights,
-
-
-          avgFlightMinutes:
-            round1_(
-              average_(
-                flight
-              )
-            ),
-
-          avgFlightTime:
-            minutesToHHMM_(
-              average_(
-                flight
-              )
-            ),
-
-          flightSamples:
-            flight.length,
-
-          flightOutliers:
-            countFlag_(
-              rows,
-              'fltOutlier'
-            ),
-
-
-          avgBlockMinutes:
-            round1_(
-              average_(
-                block
-              )
-            ),
-
-          avgBlockTime:
-            minutesToHHMM_(
-              average_(
-                block
-              )
-            ),
-
-          blockSamples:
-            block.length,
-
-          blockOutliers:
-            countFlag_(
-              rows,
-              'blockOutlier'
-            ),
-
-
-          avgDepTaxi:
-            round1_(
-              average_(
-                depTaxi
-              )
-            ),
-
-          depTaxiSamples:
-            depTaxi.length,
-
-          depTaxiOutliers:
-            countFlag_(
-              rows,
-              'depTaxiOutlier'
-            ),
-
-
-          avgArrTaxi:
-            round1_(
-              average_(
-                arrTaxi
-              )
-            ),
-
-          arrTaxiSamples:
-            arrTaxi.length,
-
-          arrTaxiOutliers:
-            countFlag_(
-              rows,
-              'arrTaxiOutlier'
-            ),
-
-
-          avgFuelBurn:
-            round0_(
-              average_(
-                fuel
-              )
-            ),
-
-          fuelSamples:
-            fuel.length,
-
-          fuelOutliers:
-            countFlag_(
-              rows,
-              'fuelBurnOutlier'
-            )
-
-        };
-
-      }
-    );
-
-}
-
-
-/* =========================================================
-   EMPTY MONTHS
-========================================================= */
-
-function makeEmptyMonthly_() {
-
-  const result =
+    data.monthly ||
     [];
 
 
-  for (
-    let month = 1;
-    month <= 12;
-    month++
-  ) {
-
-    result.push({
-
-      month:
-        month,
-
-      label:
-        month + '월',
-
-      flights:
-        0,
-
-      avgFlightMinutes:
-        null,
-
-      avgFlightTime:
-        '',
-
-      flightSamples:
-        0,
-
-      flightOutliers:
-        0,
-
-      avgBlockMinutes:
-        null,
-
-      avgBlockTime:
-        '',
-
-      blockSamples:
-        0,
-
-      blockOutliers:
-        0,
-
-      avgDepTaxi:
-        null,
-
-      depTaxiSamples:
-        0,
-
-      depTaxiOutliers:
-        0,
-
-      avgArrTaxi:
-        null,
-
-      arrTaxiSamples:
-        0,
-
-      arrTaxiOutliers:
-        0,
-
-      avgFuelBurn:
-        null,
-
-      fuelSamples:
-        0,
-
-      fuelOutliers:
-        0
-
-    });
-
-  }
-
-
-  return result;
-
-}
-
-
-/* =========================================================
-   IQR OUTLIER
-========================================================= */
-
-function markIqrOutliers_(
-  records,
-  valueKey,
-  flagKey
-) {
-
-  records.forEach(
-    row =>
-      row[flagKey] =
-        false
-  );
-
-
-  const values =
-    records
-
-      .filter(
-        row =>
-          isFiniteNumber_(
-            row[valueKey]
-          )
-      )
-
-      .map(
-        row =>
-          row[valueKey]
-      )
-
-      .sort(
-        (a,b) =>
-          a - b
-      );
-
-
   if (
-    values.length <
-    CONFIG.MIN_IQR_SAMPLE
+    !history.length
   ) {
+
+    hideResults();
+
+
+    const empty =
+      document
+        .getElementById(
+          'empty'
+        );
+
+
+    empty.style.display =
+      'block';
+
+
+    empty.textContent =
+      '조회된 운항 기록이 없습니다.';
+
 
     return;
 
   }
 
 
-  const q1 =
-    percentile_(
-      values,
-      0.25
-    );
-
-
-  const q3 =
-    percentile_(
-      values,
-      0.75
-    );
-
-
-  const iqr =
-    q3 - q1;
-
-
-  if (
-    !isFiniteNumber_(
-      iqr
-    ) ||
-    iqr <= 0
-  ) {
-
-    return;
-
-  }
-
-
-  const lower =
-    q1 -
-    CONFIG.IQR_MULTIPLIER *
-    iqr;
-
-
-  const upper =
-    q3 +
-    CONFIG.IQR_MULTIPLIER *
-    iqr;
-
-
-  records.forEach(
-    row => {
-
-      const value =
-        row[valueKey];
-
-
-      if (
-        !isFiniteNumber_(
-          value
-        )
-      ) {
-
-        return;
-
-      }
-
-
-      if (
-        value < lower ||
-        value > upper
-      ) {
-
-        row[flagKey] =
-          true;
-
-      }
-
-    }
-  );
-
-}
-
-
-/* =========================================================
-   TAXI OUTLIER
-========================================================= */
-
-function markTaxiOutliers_(
-  records,
-  valueKey,
-  flagKey
-) {
-
-  records.forEach(
-    row =>
-      row[flagKey] =
-        false
-  );
-
-
-  /*
-   * STEP 1
-   * operational hard limit
-   */
-
-  records.forEach(
-    row => {
-
-      const value =
-        row[valueKey];
-
-
-      if (
-        !isFiniteNumber_(
-          value
-        )
-      ) {
-
-        return;
-
-      }
-
-
-      if (
-
-        value <
-          CONFIG.TAXI_MIN_MINUTES ||
-
-        value >
-          CONFIG.TAXI_MAX_MINUTES
-
-      ) {
-
-        row[flagKey] =
-          true;
-
-      }
-
-    }
-  );
-
-
-  /*
-   * STEP 2
-   * IQR
-   */
-
-  const values =
-    records
-
-      .filter(
-        row =>
-          isFiniteNumber_(
-            row[valueKey]
-          ) &&
-          !row[flagKey]
-      )
-
-      .map(
-        row =>
-          row[valueKey]
-      )
-
-      .sort(
-        (a,b) =>
-          a - b
-      );
-
-
-  if (
-    values.length <
-    CONFIG.MIN_IQR_SAMPLE
-  ) {
-
-    return;
-
-  }
-
-
-  const q1 =
-    percentile_(
-      values,
-      0.25
-    );
-
-
-  const q3 =
-    percentile_(
-      values,
-      0.75
-    );
-
-
-  const iqr =
-    q3 - q1;
-
-
-  if (
-    !isFiniteNumber_(
-      iqr
-    ) ||
-    iqr <= 0
-  ) {
-
-    return;
-
-  }
-
-
-  const lower =
-    q1 -
-    CONFIG.IQR_MULTIPLIER *
-    iqr;
-
-
-  const upper =
-    q3 +
-    CONFIG.IQR_MULTIPLIER *
-    iqr;
-
-
-  records.forEach(
-    row => {
-
-      const value =
-        row[valueKey];
-
-
-      if (
-        !isFiniteNumber_(
-          value
-        ) ||
-        row[flagKey]
-      ) {
-
-        return;
-
-      }
-
-
-      if (
-        value < lower ||
-        value > upper
-      ) {
-
-        row[flagKey] =
-          true;
-
-      }
-
-    }
-  );
-
-}
-
-
-/* =========================================================
-   CLEAN DATA
-========================================================= */
-
-function cleanValues_(
-  rows,
-  valueKey,
-  flagKey
-) {
-
-  return rows
-
-    .filter(
-      row =>
-        isFiniteNumber_(
-          row[valueKey]
-        ) &&
-        !row[flagKey]
+  document
+    .getElementById(
+      'empty'
     )
+    .style.display =
+      'none';
 
-    .map(
-      row =>
-        row[valueKey]
+
+  showResults();
+
+
+  setText(
+    'routeName',
+    data.route
+  );
+
+
+  const tailText =
+    data.filters &&
+    data.filters.tail !==
+      'ALL'
+
+      ? data.filters.tail
+
+      : 'ALL TAIL';
+
+
+  setText(
+
+    'routeMeta',
+
+    `${history.length} flights · ${tailText}`
+
+  );
+
+
+  renderKPI(
+    data.summary
+  );
+
+
+  renderFlightChart(
+    monthly
+  );
+
+
+  renderFuelChart(
+    monthly
+  );
+
+
+  renderTaxiChart(
+    monthly
+  );
+
+
+  renderMonthlyTable(
+    monthly
+  );
+
+
+  renderHistory(
+    history
+  );
+
+}
+
+
+/* =========================================================
+   KPI
+========================================================= */
+
+function renderKPI(
+  summary
+) {
+
+  setText(
+    'kpiFlights',
+    number(
+      summary.flights
+    )
+  );
+
+
+  setText(
+    'kpiFlight',
+    summary.avgFlightTime ||
+    '-'
+  );
+
+
+  setText(
+
+    'kpiFlightSub',
+
+    `${summary.flightSamples || 0} used · ` +
+    `${summary.flightOutliers || 0} excluded`
+
+  );
+
+
+  setText(
+    'kpiBlock',
+    summary.avgBlockTime ||
+    '-'
+  );
+
+
+  setText(
+
+    'kpiBlockSub',
+
+    `${summary.blockSamples || 0} used · ` +
+    `${summary.blockOutliers || 0} excluded`
+
+  );
+
+
+  setText(
+    'kpiDepTaxi',
+    minute(
+      summary.avgDepTaxi
+    )
+  );
+
+
+  setText(
+
+    'kpiDepTaxiSub',
+
+    `${summary.depTaxiSamples || 0} used · ` +
+    `${summary.depTaxiOutliers || 0} excluded`
+
+  );
+
+
+  setText(
+    'kpiArrTaxi',
+    minute(
+      summary.avgArrTaxi
+    )
+  );
+
+
+  setText(
+
+    'kpiArrTaxiSub',
+
+    `${summary.arrTaxiSamples || 0} used · ` +
+    `${summary.arrTaxiOutliers || 0} excluded`
+
+  );
+
+
+  setText(
+    'kpiFuel',
+    number(
+      summary.avgFuelBurn
+    )
+  );
+
+
+  setText(
+
+    'kpiFuelSub',
+
+    `${summary.fuelSamples || 0} used · ` +
+    `${summary.fuelOutliers || 0} excluded`
+
+  );
+
+}
+
+
+/* =========================================================
+   MONTHLY FLIGHT TIME
+========================================================= */
+
+function renderFlightChart(
+  rows
+) {
+
+  if (
+    flightChart
+  ) {
+
+    flightChart.destroy();
+
+  }
+
+
+  flightChart =
+    new Chart(
+      document
+        .getElementById(
+          'flightChart'
+        ),
+      {
+
+        type:
+          'line',
+
+
+        data: {
+
+          labels:
+            rows.map(
+              row =>
+                row.label
+            ),
+
+
+          datasets: [
+
+            {
+
+              label:
+                'Flight Time',
+
+              data:
+                rows.map(
+                  row =>
+                    row.avgFlightMinutes
+                ),
+
+              borderColor:
+                '#4d8cff',
+
+              backgroundColor:
+                'rgba(77,140,255,.14)',
+
+              pointBackgroundColor:
+                '#4d8cff',
+
+              pointBorderColor:
+                '#07111e',
+
+              pointBorderWidth:
+                2,
+
+              borderWidth:
+                3,
+
+              pointRadius:
+                5,
+
+              pointHoverRadius:
+                8,
+
+              fill:
+                true,
+
+              tension:
+                .28,
+
+              spanGaps:
+                false
+
+            }
+
+          ]
+
+        },
+
+
+        options: {
+
+          responsive:
+            true,
+
+          maintainAspectRatio:
+            false,
+
+
+          layout: {
+
+            padding: {
+
+              top:
+                32,
+
+              left:
+                5,
+
+              right:
+                5
+
+            }
+
+          },
+
+
+          plugins: {
+
+            legend: {
+              display:
+                false
+            },
+
+
+            datalabels: {
+
+              display:
+                ctx => {
+
+                  const value =
+                    ctx.dataset.data[
+                      ctx.dataIndex
+                    ];
+
+
+                  return value !== null &&
+                    value !== undefined;
+
+                },
+
+
+              color:
+                '#dce8ff',
+
+              anchor:
+                'end',
+
+              align:
+                'top',
+
+              offset:
+                5,
+
+              clamp:
+                true,
+
+              font: {
+
+                size:
+                  13,
+
+                weight:
+                  '700'
+
+              },
+
+
+              formatter:
+                value =>
+                  minToHHMM(
+                    value
+                  )
+
+            },
+
+
+            tooltip: {
+
+              backgroundColor:
+                '#101e33',
+
+              callbacks: {
+
+                title:
+                  items =>
+                    items[0]
+                      .label,
+
+
+                label:
+                  ctx => {
+
+                    const row =
+                      rows[
+                        ctx.dataIndex
+                      ];
+
+
+                    return [
+
+                      'Avg Flight Time: ' +
+                      minToHHMM(
+                        ctx.raw
+                      ),
+
+                      'Flights: ' +
+                      row.flights,
+
+                      'Used: ' +
+                      row.flightSamples,
+
+                      'Excluded: ' +
+                      row.flightOutliers
+
+                    ];
+
+                  }
+
+              }
+
+            }
+
+          },
+
+
+          scales: {
+
+            x: {
+
+              grid: {
+                display:
+                  false
+              },
+
+              ticks: {
+
+                autoSkip:
+                  false,
+
+                maxRotation:
+                  0,
+
+                minRotation:
+                  0,
+
+                font: {
+
+                  size:
+                    13,
+
+                  weight:
+                    '600'
+
+                }
+
+              }
+
+            },
+
+
+            y: {
+
+              grid: {
+
+                color:
+                  'rgba(255,255,255,.05)'
+
+              },
+
+              ticks: {
+
+                font: {
+                  size:
+                    13
+                },
+
+                callback:
+                  value =>
+                    minToHHMM(
+                      value
+                    )
+
+              }
+
+            }
+
+          }
+
+        }
+
+      }
     );
 
 }
 
 
 /* =========================================================
-   FLAG COUNT
+   MONTHLY FUEL
 ========================================================= */
 
-function countFlag_(
-  rows,
-  flagKey
+function renderFuelChart(
+  rows
 ) {
 
-  return rows.filter(
-    row =>
-      row[flagKey]
-  ).length;
+  if (
+    fuelChart
+  ) {
+
+    fuelChart.destroy();
+
+  }
+
+
+  fuelChart =
+    new Chart(
+      document
+        .getElementById(
+          'fuelChart'
+        ),
+      {
+
+        type:
+          'bar',
+
+
+        data: {
+
+          labels:
+            rows.map(
+              row =>
+                row.label
+            ),
+
+
+          datasets: [
+
+            {
+
+              label:
+                'Fuel Burn',
+
+              data:
+                rows.map(
+                  row =>
+                    row.avgFuelBurn
+                ),
+
+              backgroundColor:
+                'rgba(245,182,66,.77)',
+
+              borderColor:
+                '#f5b642',
+
+              borderWidth:
+                1.5,
+
+              borderRadius:
+                8,
+
+              maxBarThickness:
+                55
+
+            }
+
+          ]
+
+        },
+
+
+        options: {
+
+          responsive:
+            true,
+
+          maintainAspectRatio:
+            false,
+
+
+          layout: {
+
+            padding: {
+
+              top:
+                32
+
+            }
+
+          },
+
+
+          plugins: {
+
+            legend: {
+              display:
+                false
+            },
+
+
+            datalabels: {
+
+              display:
+                ctx => {
+
+                  const value =
+                    ctx.dataset.data[
+                      ctx.dataIndex
+                    ];
+
+
+                  return value !== null &&
+                    value !== undefined;
+
+                },
+
+
+              color:
+                '#ffd786',
+
+              anchor:
+                'end',
+
+              align:
+                'end',
+
+              offset:
+                4,
+
+              clamp:
+                true,
+
+              font: {
+
+                size:
+                  13,
+
+                weight:
+                  '700'
+
+              },
+
+
+              formatter:
+                value =>
+                  number(
+                    value
+                  )
+
+            },
+
+
+            tooltip: {
+
+              backgroundColor:
+                '#101e33',
+
+              callbacks: {
+
+                label:
+                  ctx => {
+
+                    const row =
+                      rows[
+                        ctx.dataIndex
+                      ];
+
+
+                    return [
+
+                      'Avg Fuel Burn: ' +
+                      number(
+                        ctx.raw
+                      ),
+
+                      'Flights: ' +
+                      row.flights,
+
+                      'Used: ' +
+                      row.fuelSamples,
+
+                      'Excluded: ' +
+                      row.fuelOutliers
+
+                    ];
+
+                  }
+
+              }
+
+            }
+
+          },
+
+
+          scales: {
+
+            x: {
+
+              grid: {
+                display:
+                  false
+              },
+
+              ticks: {
+
+                autoSkip:
+                  false,
+
+                maxRotation:
+                  0,
+
+                minRotation:
+                  0,
+
+                font: {
+
+                  size:
+                    13,
+
+                  weight:
+                    '600'
+
+                }
+
+              }
+
+            },
+
+
+            y: {
+
+              beginAtZero:
+                false,
+
+              grid: {
+
+                color:
+                  'rgba(255,255,255,.05)'
+
+              },
+
+              ticks: {
+
+                font: {
+                  size:
+                    13
+                },
+
+                callback:
+                  value =>
+                    number(
+                      value
+                    )
+
+              }
+
+            }
+
+          }
+
+        }
+
+      }
+    );
 
 }
 
 
 /* =========================================================
-   TAIL LIST
+   MONTHLY TAXI
 ========================================================= */
 
-function getTailList_() {
-
-  const sheet =
-    getRawSheet_();
-
-
-  const display =
-    sheet
-      .getDataRange()
-      .getDisplayValues();
-
+function renderTaxiChart(
+  rows
+) {
 
   if (
-    !display.length
+    taxiChart
   ) {
 
-    return {
-
-      ok:
-        true,
-
-      tails:
-        []
-
-    };
+    taxiChart.destroy();
 
   }
 
 
-  const headers =
-    display[0]
-      .map(
-        value =>
-          String(
-            value || ''
-          ).trim()
+  taxiChart =
+    new Chart(
+      document
+        .getElementById(
+          'taxiChart'
+        ),
+      {
+
+        type:
+          'bar',
+
+
+        data: {
+
+          labels:
+            rows.map(
+              row =>
+                row.label
+            ),
+
+
+          datasets: [
+
+            {
+
+              label:
+                'DEP Taxi',
+
+              data:
+                rows.map(
+                  row =>
+                    row.avgDepTaxi
+                ),
+
+              backgroundColor:
+                'rgba(77,140,255,.78)',
+
+              borderColor:
+                '#4d8cff',
+
+              borderWidth:
+                1.5,
+
+              borderRadius:
+                7,
+
+              maxBarThickness:
+                40
+
+            },
+
+
+            {
+
+              label:
+                'ARR Taxi',
+
+              data:
+                rows.map(
+                  row =>
+                    row.avgArrTaxi
+                ),
+
+              backgroundColor:
+                'rgba(65,211,152,.78)',
+
+              borderColor:
+                '#41d398',
+
+              borderWidth:
+                1.5,
+
+              borderRadius:
+                7,
+
+              maxBarThickness:
+                40
+
+            }
+
+          ]
+
+        },
+
+
+        options: {
+
+          responsive:
+            true,
+
+          maintainAspectRatio:
+            false,
+
+
+          layout: {
+
+            padding: {
+
+              top:
+                30
+
+            }
+
+          },
+
+
+          plugins: {
+
+            legend: {
+
+              labels: {
+
+                usePointStyle:
+                  true,
+
+                pointStyle:
+                  'rectRounded',
+
+                padding:
+                  20,
+
+                font: {
+
+                  size:
+                    13,
+
+                  weight:
+                    '600'
+
+                }
+
+              }
+
+            },
+
+
+            datalabels: {
+
+              display:
+                ctx => {
+
+                  const value =
+                    ctx.dataset.data[
+                      ctx.dataIndex
+                    ];
+
+
+                  return value !== null &&
+                    value !== undefined;
+
+                },
+
+
+              color:
+                '#e7eef8',
+
+              anchor:
+                'end',
+
+              align:
+                'end',
+
+              offset:
+                3,
+
+              clamp:
+                true,
+
+              font: {
+
+                size:
+                  12,
+
+                weight:
+                  '700'
+
+              },
+
+
+              formatter:
+                value =>
+                  minute(
+                    value
+                  )
+
+            },
+
+
+            tooltip: {
+
+              backgroundColor:
+                '#101e33',
+
+              callbacks: {
+
+                label:
+                  ctx => {
+
+                    const row =
+                      rows[
+                        ctx.dataIndex
+                      ];
+
+
+                    const isDep =
+                      ctx.datasetIndex === 0;
+
+
+                    return [
+
+                      (
+                        isDep
+                          ? 'DEP Taxi: '
+                          : 'ARR Taxi: '
+                      ) +
+                      minute(
+                        ctx.raw
+                      ),
+
+                      'Flights: ' +
+                      row.flights,
+
+                      'Used: ' +
+                      (
+                        isDep
+                          ? row.depTaxiSamples
+                          : row.arrTaxiSamples
+                      ),
+
+                      'Excluded: ' +
+                      (
+                        isDep
+                          ? row.depTaxiOutliers
+                          : row.arrTaxiOutliers
+                      )
+
+                    ];
+
+                  }
+
+              }
+
+            }
+
+          },
+
+
+          scales: {
+
+            x: {
+
+              grid: {
+                display:
+                  false
+              },
+
+              ticks: {
+
+                autoSkip:
+                  false,
+
+                maxRotation:
+                  0,
+
+                minRotation:
+                  0,
+
+                font: {
+
+                  size:
+                    13,
+
+                  weight:
+                    '600'
+
+                }
+
+              }
+
+            },
+
+
+            y: {
+
+              beginAtZero:
+                true,
+
+              grid: {
+
+                color:
+                  'rgba(255,255,255,.05)'
+
+              },
+
+              ticks: {
+
+                font: {
+                  size:
+                    13
+                },
+
+                callback:
+                  value =>
+                    value +
+                    'm'
+
+              }
+
+            }
+
+          }
+
+        }
+
+      }
+    );
+
+}
+
+
+/* =========================================================
+   MONTHLY TABLE
+========================================================= */
+
+function renderMonthlyTable(
+  rows
+) {
+
+  const tbody =
+    document
+      .getElementById(
+        'monthlyBody'
       );
 
 
-  const map =
-    makeHeaderMap_(
-      headers
+  tbody.innerHTML =
+    '';
+
+
+  rows.forEach(
+    row => {
+
+      const tr =
+        document
+          .createElement(
+            'tr'
+          );
+
+
+      const noData =
+        row.flights === 0;
+
+
+      tr.innerHTML = `
+
+        <td>
+          ${escapeHtml(row.label)}
+        </td>
+
+
+        <td class="${noData ? 'no-data' : ''}">
+          ${number(row.flights)}
+        </td>
+
+
+        <td class="${noData ? 'no-data' : ''}">
+          ${row.flightSamples || 0}
+        </td>
+
+
+        <td>
+          ${escapeHtml(row.avgFlightTime || '-')}
+        </td>
+
+
+        <td>
+          ${escapeHtml(row.avgBlockTime || '-')}
+        </td>
+
+
+        <td>
+          ${minute(row.avgDepTaxi)}
+        </td>
+
+
+        <td>
+          ${minute(row.avgArrTaxi)}
+        </td>
+
+
+        <td>
+          ${number(row.avgFuelBurn)}
+        </td>
+
+      `;
+
+
+      tbody.appendChild(
+        tr
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   HISTORY
+========================================================= */
+
+function renderHistory(
+  rows
+) {
+
+  setText(
+    'recordCount',
+    `${rows.length} RECORDS`
+  );
+
+
+  const tbody =
+    document
+      .getElementById(
+        'historyBody'
+      );
+
+
+  tbody.innerHTML =
+    '';
+
+
+  rows
+    .slice()
+    .reverse()
+    .forEach(
+      row => {
+
+        const tr =
+          document
+            .createElement(
+              'tr'
+            );
+
+
+        tr.innerHTML = `
+
+          <td>
+            ${escapeHtml(row.date)}
+          </td>
+
+
+          <td>
+            ${escapeHtml(row.requester)}
+          </td>
+
+
+          <td>
+            ${escapeHtml(row.aircraft)}
+          </td>
+
+
+          <td>
+            ${escapeHtml(row.tail)}
+          </td>
+
+
+          <td class="${row.fltOutlier ? 'outlier' : ''}">
+            ${escapeHtml(row.fltTime)}
+          </td>
+
+
+          <td class="${row.blockOutlier ? 'outlier' : ''}">
+            ${escapeHtml(row.blockTime)}
+          </td>
+
+
+          <td class="${row.depTaxiOutlier ? 'outlier' : ''}">
+            ${minute(row.depTaxi)}
+          </td>
+
+
+          <td class="${row.arrTaxiOutlier ? 'outlier' : ''}">
+            ${minute(row.arrTaxi)}
+          </td>
+
+
+          <td>
+            ${number(row.rampOutFuel)}
+          </td>
+
+
+          <td class="${row.fuelBurnOutlier ? 'outlier' : ''}">
+            ${number(row.fuelBurn)}
+          </td>
+
+
+          <td>
+            ${number(row.fod)}
+          </td>
+
+        `;
+
+
+        tbody.appendChild(
+          tr
+        );
+
+      }
     );
 
+}
 
-  const tailIndex =
-    findHeader_(
-      map,
-      [
 
-        'AC_TAIL',
+/* =========================================================
+   DISPLAY
+========================================================= */
 
-        'AC TAIL',
+function showResults() {
 
-        'TAIL'
+  document
+    .getElementById(
+      'routeHeader'
+    )
+    .style.display =
+      'block';
 
-      ]
-    );
 
+  document
+    .getElementById(
+      'kpiGrid'
+    )
+    .style.display =
+      'grid';
+
+
+  document
+    .getElementById(
+      'chartGrid'
+    )
+    .style.display =
+      'grid';
+
+
+  document
+    .getElementById(
+      'taxiPanel'
+    )
+    .style.display =
+      'block';
+
+
+  document
+    .getElementById(
+      'monthlyPanel'
+    )
+    .style.display =
+      'block';
+
+
+  document
+    .getElementById(
+      'historyPanel'
+    )
+    .style.display =
+      'block';
+
+}
+
+
+function hideResults() {
+
+  [
+
+    'routeHeader',
+
+    'kpiGrid',
+
+    'chartGrid',
+
+    'taxiPanel',
+
+    'monthlyPanel',
+
+    'historyPanel'
+
+  ]
+  .forEach(
+    id => {
+
+      document
+        .getElementById(
+          id
+        )
+        .style.display =
+          'none';
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+function setLoading(
+  value
+) {
+
+  document
+    .getElementById(
+      'loading'
+    )
+    .style.display =
+      value
+        ? 'block'
+        : 'none';
+
+
+  document
+    .getElementById(
+      'analyzeBtn'
+    )
+    .disabled =
+      value;
+
+
+  document
+    .getElementById(
+      'analyzeBtn'
+    )
+    .textContent =
+      value
+        ? 'ANALYZING...'
+        : 'ANALYZE';
+
+
+  setText(
+    'statusText',
+    value
+      ? 'Analyzing...'
+      : 'System Ready'
+  );
+
+
+  document
+    .getElementById(
+      'statusDot'
+    )
+    .style.background =
+      value
+        ? '#4d8cff'
+        : '#41d398';
+
+}
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function valueOf(
+  id
+) {
+
+  return document
+    .getElementById(
+      id
+    )
+    .value
+    .trim();
+
+}
+
+
+function setText(
+  id,
+  value
+) {
+
+  document
+    .getElementById(
+      id
+    )
+    .textContent =
+      value ?? '';
+
+}
+
+
+function number(
+  value
+) {
 
   if (
-    tailIndex === -1
+    value === null ||
+    value === undefined ||
+    value === ''
   ) {
 
-    return {
-
-      ok:
-        true,
-
-      tails:
-        []
-
-    };
+    return '-';
 
   }
 
 
-  const set =
-    new Set();
+  const n =
+    Number(
+      value
+    );
 
 
-  for (
-    let r = 1;
-    r < display.length;
-    r++
+  if (
+    !Number.isFinite(
+      n
+    )
   ) {
 
-    const value =
-      String(
-        display[r][tailIndex] ||
+    return '-';
+
+  }
+
+
+  return n
+    .toLocaleString(
+      'en-US',
+      {
+
+        maximumFractionDigits:
+          0
+
+      }
+    );
+
+}
+
+
+function minute(
+  value
+) {
+
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
+
+    return '-';
+
+  }
+
+
+  const n =
+    Number(
+      value
+    );
+
+
+  if (
+    !Number.isFinite(
+      n
+    )
+  ) {
+
+    return '-';
+
+  }
+
+
+  return (
+    n
+      .toFixed(
+        1
+      )
+      .replace(
+        '.0',
         ''
-      ).trim();
-
-
-    if (value) {
-
-      set.add(
-        value
-      );
-
-    }
-
-  }
-
-
-  return {
-
-    ok:
-      true,
-
-    tails:
-      [...set].sort()
-
-  };
-
-}
-
-
-/* =========================================================
-   SPREADSHEET
-========================================================= */
-
-function getRawSheet_() {
-
-  const ss =
-    SpreadsheetApp
-      .openById(
-        CONFIG.SPREADSHEET_ID
-      );
-
-
-  const sheet =
-    ss.getSheetByName(
-      CONFIG.RAW_SHEET_NAME
-    );
-
-
-  if (!sheet) {
-
-    throw new Error(
-      'RAW sheet not found: ' +
-      CONFIG.RAW_SHEET_NAME
-    );
-
-  }
-
-
-  return sheet;
-
-}
-
-
-/* =========================================================
-   HEADER MAP
-========================================================= */
-
-function makeHeaderMap_(
-  headers
-) {
-
-  const map =
-    {};
-
-
-  headers.forEach(
-    (header,index) => {
-
-      const key =
-        normalizeHeader_(
-          header
-        );
-
-
-      if (key) {
-
-        map[key] =
-          index;
-
-      }
-
-    }
-  );
-
-
-  return map;
-
-}
-
-
-function normalizeHeader_(
-  value
-) {
-
-  return String(
-    value || ''
-  )
-
-    .trim()
-
-    .toUpperCase()
-
-    .replace(
-      /[_\-]+/g,
-      ' '
-    )
-
-    .replace(
-      /\s+/g,
-      ' '
-    );
-
-}
-
-
-function findHeader_(
-  map,
-  names
-) {
-
-  for (
-    const name
-    of names
-  ) {
-
-    const key =
-      normalizeHeader_(
-        name
-      );
-
-
-    if (
-      Object.prototype
-        .hasOwnProperty
-        .call(
-          map,
-          key
-        )
-    ) {
-
-      return map[key];
-
-    }
-
-  }
-
-
-  return -1;
-
-}
-
-
-function getCell_(
-  row,
-  map,
-  names
-) {
-
-  const index =
-    findHeader_(
-      map,
-      names
-    );
-
-
-  return index === -1
-    ? ''
-    : row[index];
-
-}
-
-
-function getCellRaw_(
-  row,
-  map,
-  names
-) {
-
-  const index =
-    findHeader_(
-      map,
-      names
-    );
-
-
-  return index === -1
-    ? null
-    : row[index];
-
-}
-
-
-function getFirstMatchingHeaderValue_(
-  row,
-  map,
-  names
-) {
-
-  for (
-    const name
-    of names
-  ) {
-
-    const index =
-      findHeader_(
-        map,
-        [name]
-      );
-
-
-    if (
-      index === -1
-    ) {
-
-      continue;
-
-    }
-
-
-    const value =
-      row[index];
-
-
-    if (
-      value !== '' &&
-      value !== null &&
-      value !== undefined
-    ) {
-
-      return value;
-
-    }
-
-  }
-
-
-  return '';
-
-}
-
-
-/* =========================================================
-   REQUIRED HEADER
-========================================================= */
-
-function validateRequiredHeaders_(
-  map
-) {
-
-  const required = [
-
-    [
-
-      'DEP_AIRPORT',
-
-      'DEP AIRPORT'
-
-    ],
-
-    [
-
-      'ARR_AIRPORT',
-
-      'ARR AIRPORT'
-
-    ],
-
-    [
-
-      'DEP_DATE',
-
-      'DEP DATE'
-
-    ]
-
-  ];
-
-
-  required.forEach(
-    aliases => {
-
-      if (
-        findHeader_(
-          map,
-          aliases
-        ) === -1
-      ) {
-
-        throw new Error(
-          'Required column missing: ' +
-          aliases[0]
-        );
-
-      }
-
-    }
+      ) +
+    'm'
   );
 
 }
 
 
-/* =========================================================
-   ICAO
-========================================================= */
-
-function normalizeICAO_(
-  value
-) {
-
-  const match =
-    String(
-      value || ''
-    )
-      .trim()
-      .toUpperCase()
-      .match(
-        /[A-Z0-9]{4}/
-      );
-
-
-  return match
-    ? match[0]
-    : '';
-
-}
-
-
-function extractICAO_(
-  value
-) {
-
-  const text =
-    String(
-      value || ''
-    )
-      .trim()
-      .toUpperCase();
-
-
-  const match =
-    text.match(
-      /^([A-Z0-9]{4})/
-    );
-
-
-  return match
-    ? match[1]
-    : normalizeICAO_(
-        text
-      );
-
-}
-
-
-/* =========================================================
-   DATE
-========================================================= */
-
-function normalizeDate_(
+function minToHHMM(
   value
 ) {
 
   if (
-    value instanceof Date &&
-    !isNaN(value)
+    value === null ||
+    value === undefined ||
+    value === ''
   ) {
 
-    return new Date(
-      value.getFullYear(),
-      value.getMonth(),
-      value.getDate()
-    );
+    return '-';
 
   }
 
 
-  const date =
-    new Date(
+  const n =
+    Number(
       value
     );
 
 
   if (
-    isNaN(date)
-  ) {
-
-    return null;
-
-  }
-
-
-  return new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate()
-  );
-
-}
-
-
-function parseInputDate_(
-  value
-) {
-
-  const parts =
-    String(
-      value || ''
-    )
-      .split('-')
-      .map(Number);
-
-
-  if (
-    parts.length !== 3 ||
-    !parts[0] ||
-    !parts[1] ||
-    !parts[2]
-  ) {
-
-    return null;
-
-  }
-
-
-  return new Date(
-    parts[0],
-    parts[1] - 1,
-    parts[2]
-  );
-
-}
-
-
-function formatDate_(
-  date
-) {
-
-  return Utilities
-    .formatDate(
-      date,
-      Session
-        .getScriptTimeZone(),
-      'yyyy-MM-dd'
-    );
-
-}
-
-
-/* =========================================================
-   DURATION
-========================================================= */
-
-function durationToMinutes_(
-  value
-) {
-
-  if (
-    value === '' ||
-    value === null ||
-    value === undefined
-  ) {
-
-    return null;
-
-  }
-
-
-  if (
-    typeof value ===
-    'number'
-  ) {
-
-    return value *
-      24 *
-      60;
-
-  }
-
-
-  const match =
-    String(value)
-      .trim()
-      .match(
-        /^(-?\d+):(\d{1,2})(?::(\d{1,2}))?$/
-      );
-
-
-  if (!match) {
-
-    return null;
-
-  }
-
-
-  return (
-
-    Number(
-      match[1]
-    ) *
-      60 +
-
-    Number(
-      match[2]
-    ) +
-
-    Number(
-      match[3] || 0
-    ) /
-      60
-
-  );
-
-}
-
-
-/* =========================================================
-   CLOCK
-========================================================= */
-
-function clockToMinutes_(
-  value
-) {
-
-  if (
-    value === '' ||
-    value === null ||
-    value === undefined
-  ) {
-
-    return null;
-
-  }
-
-
-  if (
-    value instanceof Date
-  ) {
-
-    return (
-
-      value.getHours() *
-        60 +
-
-      value.getMinutes() +
-
-      value.getSeconds() /
-        60
-
-    );
-
-  }
-
-
-  const match =
-    String(value)
-      .trim()
-      .match(
-        /(\d{1,2}):(\d{2})(?::(\d{2}))?/
-      );
-
-
-  if (!match) {
-
-    return null;
-
-  }
-
-
-  return (
-
-    Number(
-      match[1]
-    ) *
-      60 +
-
-    Number(
-      match[2]
-    ) +
-
-    Number(
-      match[3] || 0
-    ) /
-      60
-
-  );
-
-}
-
-
-function clockDifferenceMinutes_(
-  start,
-  end
-) {
-
-  const startMinutes =
-    clockToMinutes_(
-      start
-    );
-
-
-  const endMinutes =
-    clockToMinutes_(
-      end
-    );
-
-
-  if (
-    !isFiniteNumber_(
-      startMinutes
-    ) ||
-
-    !isFiniteNumber_(
-      endMinutes
+    !Number.isFinite(
+      n
     )
   ) {
 
-    return null;
-
-  }
-
-
-  let diff =
-    endMinutes -
-    startMinutes;
-
-
-  if (
-    diff < 0
-  ) {
-
-    diff +=
-      1440;
-
-  }
-
-
-  return Math.round(
-    diff * 10
-  ) / 10;
-
-}
-
-
-function minutesToHHMM_(
-  value
-) {
-
-  if (
-    !isFiniteNumber_(
-      value
-    )
-  ) {
-
-    return '';
+    return '-';
 
   }
 
 
   const total =
     Math.round(
-      value
+      n
     );
 
 
   const hours =
     Math.floor(
-      total / 60
+      total /
+      60
     );
 
 
   const minutes =
     Math.abs(
-      total % 60
+      total %
+      60
     );
 
 
   return (
     hours +
     ':' +
-    String(minutes)
+    String(
+      minutes
+    )
       .padStart(
         2,
         '0'
@@ -2563,340 +3693,43 @@ function minutesToHHMM_(
 }
 
 
-/* =========================================================
-   NUMBER
-========================================================= */
-
-function parseNumber_(
+function escapeHtml(
   value
 ) {
 
-  if (
-    value === '' ||
-    value === null ||
-    value === undefined
-  ) {
-
-    return null;
-
-  }
-
-
-  if (
-    typeof value ===
-      'number' &&
-    Number.isFinite(
-      value
-    )
-  ) {
-
-    return value;
-
-  }
-
-
-  const cleaned =
-    String(value)
-
-      .replace(
-        /,/g,
-        ''
-      )
-
-      .replace(
-        /[^\d.\-]/g,
-        ''
-      )
-
-      .trim();
-
-
-  if (!cleaned) {
-
-    return null;
-
-  }
-
-
-  const n =
-    Number(
-      cleaned
-    );
-
-
-  return Number.isFinite(
-    n
+  return String(
+    value ?? ''
   )
-    ? n
-    : null;
 
-}
-
-
-function isFiniteNumber_(
-  value
-) {
-
-  return (
-    typeof value ===
-      'number' &&
-    Number.isFinite(
-      value
+    .replace(
+      /&/g,
+      '&amp;'
     )
-  );
 
-}
-
-
-/* =========================================================
-   STATS
-========================================================= */
-
-function average_(
-  values
-) {
-
-  if (
-    !values ||
-    !values.length
-  ) {
-
-    return null;
-
-  }
-
-
-  return values.reduce(
-    (sum,value) =>
-      sum + value,
-    0
-  ) /
-  values.length;
-
-}
-
-
-function percentile_(
-  sorted,
-  p
-) {
-
-  if (
-    !sorted.length
-  ) {
-
-    return null;
-
-  }
-
-
-  if (
-    sorted.length === 1
-  ) {
-
-    return sorted[0];
-
-  }
-
-
-  const index =
-    (sorted.length - 1) *
-    p;
-
-
-  const lower =
-    Math.floor(
-      index
-    );
-
-
-  const upper =
-    Math.ceil(
-      index
-    );
-
-
-  if (
-    lower === upper
-  ) {
-
-    return sorted[
-      lower
-    ];
-
-  }
-
-
-  const weight =
-    index - lower;
-
-
-  return (
-
-    sorted[lower] *
-      (1 - weight) +
-
-    sorted[upper] *
-      weight
-
-  );
-
-}
-
-
-function round0_(
-  value
-) {
-
-  return isFiniteNumber_(
-    value
-  )
-    ? Math.round(
-        value
-      )
-    : null;
-
-}
-
-
-function round1_(
-  value
-) {
-
-  return isFiniteNumber_(
-    value
-  )
-    ? Math.round(
-        value *
-        10
-      ) / 10
-    : null;
-
-}
-
-
-/* =========================================================
-   OUTPUT
-========================================================= */
-
-function output_(
-  obj,
-  callback
-) {
-
-  const json =
-    JSON.stringify(
-      obj
-    );
-
-
-  if (callback) {
-
-    const safeCallback =
-      String(callback)
-        .replace(
-          /[^\w.$]/g,
-          ''
-        );
-
-
-    return ContentService
-      .createTextOutput(
-
-        safeCallback +
-        '(' +
-        json +
-        ');'
-
-      )
-      .setMimeType(
-
-        ContentService
-          .MimeType
-          .JAVASCRIPT
-
-      );
-
-  }
-
-
-  return ContentService
-    .createTextOutput(
-      json
+    .replace(
+      /</g,
+      '&lt;'
     )
-    .setMimeType(
 
-      ContentService
-        .MimeType
-        .JSON
+    .replace(
+      />/g,
+      '&gt;'
+    )
 
+    .replace(
+      /"/g,
+      '&quot;'
+    )
+
+    .replace(
+      /'/g,
+      '&#039;'
     );
 
 }
 
+</script>
 
-/* =========================================================
-   EMPTY SUMMARY
-========================================================= */
+</body>
 
-function emptySummary_() {
-
-  return {
-
-    flights:
-      0,
-
-    avgFlightMinutes:
-      null,
-
-    avgFlightTime:
-      '',
-
-    flightSamples:
-      0,
-
-    flightOutliers:
-      0,
-
-    avgBlockMinutes:
-      null,
-
-    avgBlockTime:
-      '',
-
-    blockSamples:
-      0,
-
-    blockOutliers:
-      0,
-
-    avgDepTaxi:
-      null,
-
-    depTaxiSamples:
-      0,
-
-    depTaxiOutliers:
-      0,
-
-    avgArrTaxi:
-      null,
-
-    arrTaxiSamples:
-      0,
-
-    arrTaxiOutliers:
-      0,
-
-    avgFuelBurn:
-      null,
-
-    fuelSamples:
-      0,
-
-    fuelOutliers:
-      0
-
-  };
-
-}
+</html>
