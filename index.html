@@ -1,453 +1,284 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Flight Performance Intelligence</title>
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+/>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<title>
+Flight Performance Intelligence
+</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script
+  src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js">
+</script>
+
+
+<link
+  rel="preconnect"
+  href="https://fonts.googleapis.com"
+/>
+
+<link
+  rel="preconnect"
+  href="https://fonts.gstatic.com"
+  crossorigin
+/>
+
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+  rel="stylesheet"
+/>
+
 
 <style>
 
-/* =========================================================
-   ROOT
-========================================================= */
-
 :root {
 
-  --bg: #07101e;
-  --bg-soft: #0b1628;
+  --bg:
+    #07101e;
 
-  --panel: rgba(17, 31, 52, 0.86);
-  --panel-2: rgba(12, 25, 44, 0.92);
+  --panel:
+    rgba(17,31,52,.94);
 
-  --line: rgba(255,255,255,0.08);
+  --line:
+    rgba(255,255,255,.08);
 
-  --text: #f3f7fc;
-  --text-2: #a8b5c8;
-  --text-3: #738196;
+  --text:
+    #f4f7fb;
 
-  --blue: #4d8cff;
-  --cyan: #28d7e5;
-  --green: #42d392;
-  --amber: #f5b94c;
-  --red: #ff647c;
-  --purple: #9b7bff;
+  --muted:
+    #9aabc0;
 
-  --shadow:
-    0 18px 50px rgba(0,0,0,.28);
+  --blue:
+    #4d8cff;
+
+  --cyan:
+    #27d6e5;
+
+  --green:
+    #44d69a;
+
+  --amber:
+    #f7b84b;
+
+  --red:
+    #ff647c;
 
 }
 
 
-/* =========================================================
-   RESET
-========================================================= */
+/* ========================================================= */
 
 * {
-  box-sizing: border-box;
+  box-sizing:
+    border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
 
 body {
 
   margin: 0;
 
-  min-height: 100vh;
-
   font-family:
     Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
     sans-serif;
 
   background:
-    radial-gradient(
-      circle at 15% 0%,
-      rgba(58,109,255,.18),
-      transparent 32%
-    ),
-    radial-gradient(
-      circle at 90% 8%,
-      rgba(27,208,224,.11),
-      transparent 30%
-    ),
     linear-gradient(
       180deg,
-      #07101e 0%,
-      #081322 45%,
-      #07101e 100%
+      #07101e,
+      #091728
     );
 
-  color: var(--text);
+  color:
+    var(--text);
+
+  font-size:
+    15px;
 
 }
 
 
-/* =========================================================
-   BACKGROUND GRID
-========================================================= */
-
-body::before {
-
-  content: "";
-
-  position: fixed;
-
-  inset: 0;
-
-  pointer-events: none;
-
-  opacity: .15;
-
-  background-image:
-    linear-gradient(
-      rgba(255,255,255,.025) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(255,255,255,.025) 1px,
-      transparent 1px
-    );
-
-  background-size: 50px 50px;
-
-}
-
-
-/* =========================================================
-   LAYOUT
-========================================================= */
+/* ========================================================= */
 
 .app {
 
-  position: relative;
+  width:
+    min(
+      1580px,
+      calc(
+        100% - 30px
+      )
+    );
 
-  width: min(
-    1540px,
-    calc(100% - 38px)
-  );
-
-  margin: 0 auto;
+  margin:
+    0 auto;
 
   padding:
-    26px 0
-    60px;
+    25px 0 60px;
 
 }
 
 
-/* =========================================================
-   TOP BAR
-========================================================= */
+/* ========================================================= */
 
 .topbar {
 
-  display: flex;
+  display:
+    flex;
 
   justify-content:
     space-between;
 
-  align-items: center;
+  align-items:
+    center;
 
-  margin-bottom: 22px;
+  margin-bottom:
+    20px;
 
 }
 
 
 .brand {
 
-  display: flex;
+  font-size:
+    21px;
 
-  align-items: center;
-
-  gap: 13px;
-
-}
-
-
-.brand-icon {
-
-  width: 42px;
-  height: 42px;
-
-  display: grid;
-  place-items: center;
-
-  border-radius: 12px;
-
-  background:
-    linear-gradient(
-      135deg,
-      var(--blue),
-      var(--cyan)
-    );
-
-  font-size: 21px;
-
-  box-shadow:
-    0 10px 30px
-    rgba(54,118,255,.3);
-
-}
-
-
-.brand-title {
-
-  font-size: 17px;
-
-  font-weight: 700;
-
-  letter-spacing: -.3px;
+  font-weight:
+    800;
 
 }
 
 
 .brand-sub {
 
-  margin-top: 3px;
+  color:
+    var(--muted);
 
-  color: var(--text-3);
+  font-size:
+    13px;
 
-  font-size: 11px;
-
-}
-
-
-.live-status {
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 8px;
-
-  color: var(--text-2);
-
-  font-size: 11px;
+  margin-top:
+    4px;
 
 }
 
 
-.status-dot {
+.status {
 
-  width: 8px;
-  height: 8px;
+  color:
+    var(--muted);
 
-  border-radius: 50%;
-
-  background: var(--green);
-
-  box-shadow:
-    0 0 14px
-    rgba(66,211,146,.8);
+  font-size:
+    13px;
 
 }
 
 
-/* =========================================================
-   HERO
-========================================================= */
+/* ========================================================= */
 
 .hero {
-
-  position: relative;
-
-  overflow: hidden;
-
-  padding: 25px;
-
-  border:
-    1px solid var(--line);
-
-  border-radius: 20px;
 
   background:
     linear-gradient(
       135deg,
-      rgba(22,42,70,.94),
-      rgba(9,23,42,.9)
+      #12243e,
+      #0a182a
     );
 
-  box-shadow:
-    var(--shadow);
+  border:
+    1px solid
+    var(--line);
 
-  margin-bottom: 20px;
+  border-radius:
+    18px;
 
-}
+  padding:
+    24px;
 
-
-.hero::after {
-
-  content: "";
-
-  position: absolute;
-
-  width: 420px;
-  height: 420px;
-
-  right: -180px;
-  top: -230px;
-
-  border-radius: 50%;
-
-  background:
-    radial-gradient(
-      circle,
-      rgba(52,139,255,.25),
-      transparent 67%
-    );
+  margin-bottom:
+    22px;
 
 }
 
 
-.hero-top {
-
-  display: flex;
-
-  justify-content:
-    space-between;
-
-  align-items:
-    flex-start;
-
-  gap: 20px;
-
-  position: relative;
-
-  z-index: 2;
-
-}
-
-
-.eyebrow {
-
-  color: var(--cyan);
-
-  font-weight: 700;
-
-  font-size: 10px;
-
-  letter-spacing: 1.8px;
-
-  text-transform: uppercase;
-
-  margin-bottom: 8px;
-
-}
-
-
-.hero h1 {
-
-  margin: 0;
+.hero-title {
 
   font-size:
-    clamp(
-      26px,
-      3vw,
-      42px
-    );
+    32px;
 
-  letter-spacing: -1.2px;
+  font-weight:
+    800;
 
 }
 
 
-.hero-description {
+.hero-sub {
 
-  margin-top: 8px;
+  margin-top:
+    7px;
 
-  color: var(--text-2);
+  color:
+    var(--muted);
 
-  font-size: 12px;
+  font-size:
+    14px;
 
 }
 
 
-/* =========================================================
-   SEARCH
-========================================================= */
+/* ========================================================= */
 
-.search-panel {
+.search-grid {
 
-  position: relative;
-
-  z-index: 3;
-
-  margin-top: 25px;
-
-  padding: 14px;
-
-  display: grid;
+  display:
+    grid;
 
   grid-template-columns:
     1fr
-    46px
+    45px
     1fr
-    1.6fr
+    1.4fr
+    1fr
     1fr
     1fr
     auto;
 
-  gap: 10px;
+  gap:
+    10px;
 
-  align-items: end;
+  align-items:
+    end;
 
-  border:
-    1px solid rgba(255,255,255,.08);
-
-  border-radius: 14px;
-
-  background:
-    rgba(6,17,32,.65);
-
-  backdrop-filter:
-    blur(14px);
+  margin-top:
+    22px;
 
 }
 
 
-.search-divider {
+label {
 
-  height: 42px;
+  display:
+    block;
 
-  display: flex;
+  font-size:
+    12px;
 
-  align-items: center;
+  color:
+    var(--muted);
 
-  justify-content: center;
+  margin-bottom:
+    6px;
 
-  color: var(--cyan);
-
-  font-size: 19px;
-
-}
-
-
-.field label {
-
-  display: block;
-
-  margin:
-    0 0 6px 2px;
-
-  color: var(--text-3);
-
-  font-size: 9px;
-
-  font-weight: 700;
-
-  letter-spacing: .7px;
+  font-weight:
+    700;
 
 }
 
@@ -455,28 +286,30 @@ body::before {
 input,
 select {
 
-  width: 100%;
-  height: 42px;
+  width:
+    100%;
+
+  height:
+    44px;
 
   border:
     1px solid
-    rgba(255,255,255,.09);
+    rgba(255,255,255,.1);
 
-  border-radius: 9px;
+  border-radius:
+    9px;
 
   background:
-    rgba(255,255,255,.055);
+    rgba(255,255,255,.06);
 
-  color: white;
+  color:
+    white;
 
   padding:
     0 12px;
 
-  font-family: inherit;
-
-  font-size: 12px;
-
-  transition: .2s ease;
+  font-size:
+    14px;
 
 }
 
@@ -484,694 +317,336 @@ select {
 select option {
 
   background:
-    #101d30;
+    #122035;
 
 }
 
 
-input:focus,
-select:focus {
+.arrow {
 
-  outline: none;
+  height:
+    44px;
 
-  border-color:
-    rgba(77,140,255,.75);
+  display:
+    flex;
 
-  background:
-    rgba(77,140,255,.07);
+  align-items:
+    center;
 
-  box-shadow:
-    0 0 0 3px
-    rgba(77,140,255,.09);
+  justify-content:
+    center;
+
+  font-size:
+    21px;
+
+  color:
+    var(--cyan);
 
 }
 
 
-.search-btn {
+button {
 
-  height: 42px;
-
-  min-width: 116px;
-
-  border: none;
-
-  border-radius: 9px;
+  height:
+    44px;
 
   padding:
-    0 21px;
+    0 24px;
+
+  border:
+    none;
+
+  border-radius:
+    9px;
 
   background:
     linear-gradient(
       135deg,
-      #397cff,
-      #27b9dc
+      #367cff,
+      #21bddb
     );
 
-  color: white;
+  color:
+    white;
 
-  font-family: inherit;
+  font-size:
+    13px;
 
-  font-weight: 700;
+  font-weight:
+    800;
 
-  font-size: 11px;
-
-  letter-spacing: .5px;
-
-  cursor: pointer;
-
-  transition: .2s;
-
-  box-shadow:
-    0 9px 24px
-    rgba(42,117,255,.24);
+  cursor:
+    pointer;
 
 }
 
 
-.search-btn:hover {
+/* ========================================================= */
 
-  transform:
-    translateY(-1px);
+.route-title {
 
-  box-shadow:
-    0 13px 30px
-    rgba(42,117,255,.34);
-
-}
-
-
-/* =========================================================
-   LOADING
-========================================================= */
-
-.loading {
-
-  display: none;
-
-  margin: 20px 0;
-
-  padding: 22px;
-
-  text-align: center;
-
-  color: var(--text-2);
-
-}
-
-
-.loader {
-
-  width: 28px;
-  height: 28px;
+  display:
+    none;
 
   margin:
-    0 auto 10px;
+    27px 0 14px;
 
-  border:
-    3px solid
-    rgba(255,255,255,.08);
+  font-size:
+    23px;
 
-  border-top-color:
-    var(--cyan);
-
-  border-radius: 50%;
-
-  animation:
-    rotate .8s linear infinite;
+  font-weight:
+    800;
 
 }
 
 
-@keyframes rotate {
-
-  to {
-    transform:
-      rotate(360deg);
-  }
-
-}
-
-
-/* =========================================================
-   ROUTE HEADER
-========================================================= */
-
-.route-header {
-
-  display: none;
-
-  align-items: center;
-
-  justify-content:
-    space-between;
-
-  gap: 20px;
-
-  margin:
-    24px 2px 12px;
-
-}
-
-
-.route-left {
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 13px;
-
-}
-
-
-.route-name {
-
-  font-size: 20px;
-
-  font-weight: 800;
-
-  letter-spacing: -.5px;
-
-}
-
-
-.route-airplane {
-
-  color: var(--cyan);
-
-  font-size: 18px;
-
-}
-
-
-.route-meta {
-
-  color: var(--text-3);
-
-  font-size: 10px;
-
-  margin-top: 3px;
-
-}
-
-
-/* =========================================================
-   KPI CARDS
-========================================================= */
+/* ========================================================= */
 
 .kpi-grid {
 
-  display: none;
+  display:
+    none;
 
   grid-template-columns:
-    repeat(7, 1fr);
+    repeat(
+      6,
+      1fr
+    );
 
-  gap: 11px;
+  gap:
+    12px;
 
-  margin-bottom: 20px;
+  margin-bottom:
+    18px;
 
 }
 
 
 .kpi {
 
-  position: relative;
-
-  overflow: hidden;
-
-  min-height: 112px;
-
-  padding: 16px;
+  background:
+    var(--panel);
 
   border:
-    1px solid var(--line);
+    1px solid
+    var(--line);
 
-  border-radius: 14px;
+  border-radius:
+    14px;
 
-  background:
-    linear-gradient(
-      145deg,
-      rgba(19,35,58,.94),
-      rgba(11,24,42,.94)
-    );
-
-  box-shadow:
-    0 10px 32px
-    rgba(0,0,0,.15);
-
-}
-
-
-.kpi::before {
-
-  content: "";
-
-  position: absolute;
-
-  left: 0;
-  top: 0;
-
-  width: 100%;
-  height: 2px;
-
-  opacity: .8;
-
-}
-
-
-.kpi.blue::before {
-  background: var(--blue);
-}
-
-.kpi.cyan::before {
-  background: var(--cyan);
-}
-
-.kpi.green::before {
-  background: var(--green);
-}
-
-.kpi.amber::before {
-  background: var(--amber);
-}
-
-.kpi.purple::before {
-  background: var(--purple);
-}
-
-
-.kpi-icon {
-
-  width: 29px;
-  height: 29px;
-
-  display: grid;
-
-  place-items: center;
-
-  border-radius: 8px;
-
-  background:
-    rgba(255,255,255,.06);
-
-  margin-bottom: 10px;
-
-  font-size: 13px;
+  padding:
+    17px;
 
 }
 
 
 .kpi-label {
 
-  color: var(--text-3);
+  font-size:
+    12px;
 
-  font-size: 8px;
+  color:
+    var(--muted);
 
-  letter-spacing: .8px;
-
-  font-weight: 700;
-
-  margin-bottom: 5px;
+  font-weight:
+    700;
 
 }
 
 
 .kpi-value {
 
-  font-size: 20px;
+  margin-top:
+    8px;
 
-  font-weight: 800;
+  font-size:
+    25px;
 
-  letter-spacing: -.6px;
+  font-weight:
+    800;
 
 }
 
 
 .kpi-sub {
 
-  margin-top: 5px;
+  margin-top:
+    6px;
 
-  color: var(--text-3);
+  font-size:
+    11px;
 
-  font-size: 9px;
+  color:
+    #718298;
 
 }
 
 
-/* =========================================================
-   ANALYSIS GRID
-========================================================= */
+/* ========================================================= */
 
-.analysis-grid {
+.grid2 {
 
-  display: none;
+  display:
+    none;
 
   grid-template-columns:
-    1.55fr
-    1fr;
+    1fr 1fr;
 
-  gap: 15px;
+  gap:
+    16px;
 
-  margin-bottom: 15px;
+  margin-bottom:
+    16px;
 
 }
 
 
 .panel {
 
-  border:
-    1px solid var(--line);
-
-  border-radius: 16px;
-
   background:
-    linear-gradient(
-      150deg,
-      rgba(17,32,53,.93),
-      rgba(10,22,39,.95)
-    );
+    var(--panel);
 
-  padding: 19px;
+  border:
+    1px solid
+    var(--line);
 
-  box-shadow:
-    0 12px 38px
-    rgba(0,0,0,.16);
+  border-radius:
+    16px;
 
-}
-
-
-.panel-head {
-
-  display: flex;
-
-  justify-content:
-    space-between;
-
-  align-items:
-    flex-start;
-
-  margin-bottom: 17px;
+  padding:
+    20px;
 
 }
 
 
 .panel-title {
 
-  font-size: 13px;
+  font-size:
+    17px;
 
-  font-weight: 700;
+  font-weight:
+    800;
 
 }
 
 
 .panel-sub {
 
-  margin-top: 4px;
+  margin-top:
+    4px;
 
-  color: var(--text-3);
+  color:
+    var(--muted);
 
-  font-size: 9px;
-
-}
-
-
-.chart-box {
-
-  position: relative;
-
-  height: 300px;
+  font-size:
+    12px;
 
 }
 
 
-/* =========================================================
-   TAXI
-========================================================= */
+.chart {
 
-.taxi-wrap {
+  height:
+    350px;
 
-  display: grid;
-
-  grid-template-columns:
-    1fr 1fr;
-
-  gap: 13px;
+  margin-top:
+    14px;
 
 }
 
 
-.taxi-card {
-
-  padding: 17px;
-
-  border-radius: 13px;
-
-  background:
-    rgba(255,255,255,.035);
-
-  border:
-    1px solid
-    rgba(255,255,255,.06);
-
-}
-
-
-.taxi-title {
-
-  color: var(--text-2);
-
-  font-size: 10px;
-
-  margin-bottom: 9px;
-
-}
-
-
-.taxi-time {
-
-  font-size: 27px;
-
-  font-weight: 800;
-
-}
-
-
-.taxi-time span {
-
-  color: var(--text-3);
-
-  font-size: 11px;
-
-  font-weight: 500;
-
-}
-
-
-.taxi-bar {
-
-  height: 5px;
-
-  margin-top: 13px;
-
-  border-radius: 20px;
-
-  background:
-    rgba(255,255,255,.06);
-
-  overflow: hidden;
-
-}
-
-
-.taxi-progress {
-
-  height: 100%;
-
-  border-radius: 20px;
-
-  background:
-    linear-gradient(
-      90deg,
-      var(--blue),
-      var(--cyan)
-    );
-
-  transition:
-    width .8s ease;
-
-}
-
-
-.taxi-note {
-
-  margin-top: 9px;
-
-  color: var(--text-3);
-
-  font-size: 8px;
-
-}
-
-
-/* =========================================================
-   SECOND GRID
-========================================================= */
-
-.second-grid {
-
-  display: none;
-
-  grid-template-columns:
-    1fr
-    1fr;
-
-  gap: 15px;
-
-  margin-bottom: 15px;
-
-}
-
-
-/* =========================================================
-   TABLE
-========================================================= */
+/* ========================================================= */
 
 .table-panel {
 
-  display: none;
+  display:
+    none;
 
-  margin-top: 15px;
-
-}
-
-
-.table-tools {
-
-  display: flex;
-
-  justify-content:
-    space-between;
-
-  align-items: center;
-
-  margin-bottom: 13px;
-
-}
-
-
-.result-count {
-
-  color: var(--text-3);
-
-  font-size: 10px;
+  margin-top:
+    17px;
 
 }
 
 
 .table-scroll {
 
-  max-height: 590px;
+  overflow:
+    auto;
 
-  overflow: auto;
-
-  border-radius: 10px;
+  max-height:
+    650px;
 
 }
 
 
 table {
 
-  width: 100%;
-
-  min-width: 1150px;
+  width:
+    100%;
 
   border-collapse:
-    separate;
+    collapse;
 
-  border-spacing: 0;
-
-  font-size: 10px;
+  min-width:
+    1050px;
 
 }
 
 
-thead th {
+th {
 
-  position: sticky;
+  position:
+    sticky;
 
-  top: 0;
-
-  z-index: 4;
+  top:
+    0;
 
   background:
-    #111e31;
+    #101e33;
+
+  padding:
+    13px 10px;
+
+  font-size:
+    12px;
 
   color:
-    #8190a5;
-
-  padding:
-    12px 10px;
-
-  text-align: center;
-
-  font-size: 8px;
-
-  letter-spacing: .6px;
-
-  border-bottom:
-    1px solid var(--line);
-
-}
-
-
-tbody td {
-
-  padding:
-    11px 9px;
-
-  text-align: center;
+    #90a3bb;
 
   border-bottom:
     1px solid
-    rgba(255,255,255,.045);
-
-  color: #cbd5e3;
+    var(--line);
 
 }
 
 
-tbody tr {
-
-  transition: .15s;
-
-}
-
-
-tbody tr:hover {
-
-  background:
-    rgba(69,132,255,.06);
-
-}
-
-
-.req-pill {
-
-  display: inline-flex;
-
-  min-width: 35px;
-
-  justify-content: center;
+td {
 
   padding:
-    4px 7px;
+    14px 10px;
 
-  border-radius: 6px;
+  text-align:
+    center;
 
-  color: #9ec1ff;
+  font-size:
+    13px;
+
+  border-bottom:
+    1px solid
+    rgba(255,255,255,.05);
+
+}
+
+
+tr:hover {
 
   background:
-    rgba(77,140,255,.10);
+    rgba(
+      68,
+      123,
+      255,
+      .06
+    );
 
 }
 
@@ -1179,311 +654,202 @@ tbody tr:hover {
 .outlier {
 
   color:
-    var(--red) !important;
+    var(--red);
 
 }
 
 
-.outlier-tag {
+/* ========================================================= */
 
-  display: block;
+.loading {
 
-  margin-top: 3px;
+  display:
+    none;
 
-  font-size: 7px;
+  text-align:
+    center;
 
-  font-weight: 700;
+  padding:
+    35px;
 
-  color: var(--red);
-
-}
-
-
-.calc {
-
-  display: block;
-
-  margin-top: 3px;
+  font-size:
+    14px;
 
   color:
-    var(--amber);
-
-  font-size: 7px;
+    var(--muted);
 
 }
 
 
-/* =========================================================
-   SEASON TABLE
-========================================================= */
+/* ========================================================= */
 
-.season-table {
+.empty {
 
-  width: 100%;
+  text-align:
+    center;
 
-  min-width: 680px;
+  padding:
+    70px 20px;
 
-}
-
-
-/* =========================================================
-   EMPTY
-========================================================= */
-
-.empty-state {
-
-  margin-top: 20px;
-
-  padding: 65px 20px;
-
-  text-align: center;
-
-  border:
-    1px dashed
-    rgba(255,255,255,.1);
-
-  border-radius: 17px;
-
-  background:
-    rgba(255,255,255,.018);
+  color:
+    var(--muted);
 
 }
 
 
-.empty-plane {
+/* ========================================================= */
 
-  font-size: 38px;
+@media(max-width:1100px) {
 
-  opacity: .7;
+  .search-grid {
 
-  margin-bottom: 13px;
+    grid-template-columns:
+      repeat(
+        3,
+        1fr
+      );
 
-}
+  }
 
-
-.empty-title {
-
-  font-weight: 700;
-
-  font-size: 14px;
-
-}
-
-
-.empty-text {
-
-  color: var(--text-3);
-
-  font-size: 10px;
-
-  margin-top: 6px;
-
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media(max-width: 1180px) {
 
   .kpi-grid {
-    grid-template-columns:
-      repeat(4,1fr);
-  }
 
-  .search-panel {
     grid-template-columns:
-      1fr 30px 1fr 1fr;
-  }
+      repeat(
+        3,
+        1fr
+      );
 
-  .search-btn {
-    width: 100%;
   }
 
 }
 
 
-@media(max-width: 800px) {
+@media(max-width:700px) {
 
-  .app {
-    width:
-      calc(100% - 18px);
-  }
-
-  .hero {
-    padding: 18px;
-  }
-
-  .search-panel {
+  .search-grid {
 
     grid-template-columns:
-      1fr 24px 1fr;
+      1fr 30px 1fr;
 
   }
 
-  .field.aircraft-field,
-  .field.date-field,
-  .search-btn {
 
-    grid-column:
-      span 3;
-
-  }
-
-  .analysis-grid,
-  .second-grid {
+  .grid2 {
 
     grid-template-columns:
       1fr;
 
   }
 
+
   .kpi-grid {
 
     grid-template-columns:
-      repeat(2,1fr);
-
-  }
-
-  .hero-top {
-
-    display: block;
-
-  }
-
-  .chart-box {
-
-    height: 260px;
+      repeat(
+        2,
+        1fr
+      );
 
   }
 
 }
 
 </style>
+
 </head>
 
 
 <body>
 
+
 <div class="app">
 
 
-<!-- =======================================================
-     TOP
-======================================================= -->
-
 <div class="topbar">
 
-  <div class="brand">
+  <div>
 
-    <div class="brand-icon">
-      ✈
+    <div class="brand">
+      ✈ Flight Performance Intelligence
     </div>
 
-    <div>
-
-      <div class="brand-title">
-        Flight Performance Intelligence
-      </div>
-
-      <div class="brand-sub">
-        Historical Route Analytics
-      </div>
-
+    <div class="brand-sub">
+      Historical Route Analytics
     </div>
 
   </div>
 
 
-  <div class="live-status">
-
-    <div class="status-dot"></div>
-
-    <span id="status">
-      System Ready
-    </span>
-
+  <div
+    id="status"
+    class="status"
+  >
+    System Ready
   </div>
 
 </div>
 
 
 
-<!-- =======================================================
-     HERO SEARCH
-======================================================= -->
-
 <div class="hero">
 
-  <div class="hero-top">
+  <div class="hero-title">
+    Route Performance Analyzer
+  </div>
 
-    <div>
-
-      <div class="eyebrow">
-        Route Analytics
-      </div>
-
-      <h1>
-        Historical Flight Performance
-      </h1>
-
-      <div class="hero-description">
-        Analyze actual flight time, taxi performance and fuel trends by route.
-      </div>
-
-    </div>
-
+  <div class="hero-sub">
+    Historical flight time, taxi and fuel analysis
   </div>
 
 
-  <div class="search-panel">
+  <div class="search-grid">
 
 
-    <div class="field">
+    <div>
 
       <label>
-        DEPARTURE ICAO
+        DEPARTURE
       </label>
 
       <input
         id="dep"
         maxlength="4"
         placeholder="RKSS"
-        autocomplete="off"
       >
 
     </div>
 
 
-    <div class="search-divider">
+    <div class="arrow">
       →
     </div>
 
 
-    <div class="field">
+    <div>
 
       <label>
-        ARRIVAL ICAO
+        ARRIVAL
       </label>
 
       <input
         id="arr"
         maxlength="4"
         placeholder="RJAA"
-        autocomplete="off"
       >
 
     </div>
 
 
-    <div class="field aircraft-field">
+    <div>
 
       <label>
         AIRCRAFT TYPE
       </label>
 
-      <select id="aircraft">
+      <select
+        id="aircraft"
+      >
 
         <option value="ALL">
           ALL AIRCRAFT
@@ -1494,10 +860,29 @@ tbody tr:hover {
     </div>
 
 
-    <div class="field date-field">
+    <div>
 
       <label>
-        FROM DATE
+        TAIL
+      </label>
+
+      <select
+        id="tail"
+      >
+
+        <option value="ALL">
+          ALL TAIL
+        </option>
+
+      </select>
+
+    </div>
+
+
+    <div>
+
+      <label>
+        FROM
       </label>
 
       <input
@@ -1508,10 +893,10 @@ tbody tr:hover {
     </div>
 
 
-    <div class="field date-field">
+    <div>
 
       <label>
-        TO DATE
+        TO
       </label>
 
       <input
@@ -1523,7 +908,6 @@ tbody tr:hover {
 
 
     <button
-      class="search-btn"
       onclick="searchRoute()"
     >
       ANALYZE
@@ -1535,64 +919,22 @@ tbody tr:hover {
 
 
 
-<!-- =======================================================
-     LOADING
-======================================================= -->
-
 <div
   id="loading"
   class="loading"
 >
-
-  <div class="loader"></div>
-
-  Analyzing historical flight data...
-
+  Analyzing...
 </div>
 
 
-
-<!-- =======================================================
-     ROUTE TITLE
-======================================================= -->
 
 <div
-  id="routeHeader"
-  class="route-header"
+  id="routeTitle"
+  class="route-title"
 >
-
-  <div class="route-left">
-
-    <div>
-
-      <div
-        id="routeName"
-        class="route-name"
-      >
-        RKSS
-      </div>
-
-      <div
-        id="routeMeta"
-        class="route-meta"
-      >
-      </div>
-
-    </div>
-
-    <div class="route-airplane">
-      ✈
-    </div>
-
-  </div>
-
 </div>
 
 
-
-<!-- =======================================================
-     KPI
-======================================================= -->
 
 <div
   id="kpiGrid"
@@ -1600,11 +942,7 @@ tbody tr:hover {
 >
 
 
-  <div class="kpi blue">
-
-    <div class="kpi-icon">
-      ✈
-    </div>
+  <div class="kpi">
 
     <div class="kpi-label">
       FLIGHTS
@@ -1617,18 +955,10 @@ tbody tr:hover {
       -
     </div>
 
-    <div class="kpi-sub">
-      Historical legs
-    </div>
-
   </div>
 
 
-  <div class="kpi cyan">
-
-    <div class="kpi-icon">
-      ◷
-    </div>
+  <div class="kpi">
 
     <div class="kpi-label">
       AVG FLIGHT TIME
@@ -1641,18 +971,16 @@ tbody tr:hover {
       -
     </div>
 
-    <div class="kpi-sub">
-      Airborne time
+    <div
+      id="kpiFlightSub"
+      class="kpi-sub"
+    >
     </div>
 
   </div>
 
 
-  <div class="kpi purple">
-
-    <div class="kpi-icon">
-      ⏱
-    </div>
+  <div class="kpi">
 
     <div class="kpi-label">
       AVG BLOCK TIME
@@ -1665,18 +993,16 @@ tbody tr:hover {
       -
     </div>
 
-    <div class="kpi-sub">
-      Ramp to ramp
+    <div
+      id="kpiBlockSub"
+      class="kpi-sub"
+    >
     </div>
 
   </div>
 
 
-  <div class="kpi green">
-
-    <div class="kpi-icon">
-      ⇥
-    </div>
+  <div class="kpi">
 
     <div class="kpi-label">
       DEP TAXI
@@ -1689,18 +1015,16 @@ tbody tr:hover {
       -
     </div>
 
-    <div class="kpi-sub">
-      Outliers excluded
+    <div
+      id="kpiDepTaxiSub"
+      class="kpi-sub"
+    >
     </div>
 
   </div>
 
 
-  <div class="kpi green">
-
-    <div class="kpi-icon">
-      ⇤
-    </div>
+  <div class="kpi">
 
     <div class="kpi-label">
       ARR TAXI
@@ -1713,56 +1037,32 @@ tbody tr:hover {
       -
     </div>
 
-    <div class="kpi-sub">
-      Outliers excluded
+    <div
+      id="kpiArrTaxiSub"
+      class="kpi-sub"
+    >
     </div>
 
   </div>
 
 
-  <div class="kpi amber">
-
-    <div class="kpi-icon">
-      ⛽
-    </div>
+  <div class="kpi">
 
     <div class="kpi-label">
       AVG FUEL BURN
     </div>
 
     <div
-      id="kpiBurn"
+      id="kpiFuel"
       class="kpi-value"
     >
       -
-    </div>
-
-    <div class="kpi-sub">
-      Historical average
-    </div>
-
-  </div>
-
-
-  <div class="kpi blue">
-
-    <div class="kpi-icon">
-      ◉
-    </div>
-
-    <div class="kpi-label">
-      AVG FOD
     </div>
 
     <div
-      id="kpiFOD"
-      class="kpi-value"
+      id="kpiFuelSub"
+      class="kpi-sub"
     >
-      -
-    </div>
-
-    <div class="kpi-sub">
-      Fuel on destination
     </div>
 
   </div>
@@ -1771,39 +1071,26 @@ tbody tr:hover {
 
 
 
-<!-- =======================================================
-     MAIN ANALYSIS
-======================================================= -->
-
 <div
-  id="analysisGrid"
-  class="analysis-grid"
+  id="charts"
+  class="grid2"
 >
 
 
   <div class="panel">
 
-    <div class="panel-head">
-
-      <div>
-
-        <div class="panel-title">
-          Flight Time Trend
-        </div>
-
-        <div class="panel-sub">
-          Actual historical flights and seasonal averages
-        </div>
-
-      </div>
-
+    <div class="panel-title">
+      Flight Time Trend
     </div>
 
+    <div class="panel-sub">
+      Individual historical flights
+    </div>
 
-    <div class="chart-box">
+    <div class="chart">
 
       <canvas
-        id="flightTrendChart"
+        id="flightChart"
       ></canvas>
 
     </div>
@@ -1811,146 +1098,17 @@ tbody tr:hover {
   </div>
 
 
-
   <div class="panel">
 
-    <div class="panel-head">
-
-      <div>
-
-        <div class="panel-title">
-          Taxi Performance
-        </div>
-
-        <div class="panel-sub">
-          Clean average after outlier filtering
-        </div>
-
-      </div>
-
+    <div class="panel-title">
+      Fuel Burn Trend
     </div>
 
-
-    <div class="taxi-wrap">
-
-
-      <div class="taxi-card">
-
-        <div class="taxi-title">
-          Departure Taxi
-        </div>
-
-        <div
-          id="taxiDep"
-          class="taxi-time"
-        >
-          -
-        </div>
-
-        <div class="taxi-bar">
-
-          <div
-            id="taxiDepBar"
-            class="taxi-progress"
-            style="width:0%"
-          ></div>
-
-        </div>
-
-        <div
-          id="taxiDepNote"
-          class="taxi-note"
-        >
-        </div>
-
-      </div>
-
-
-      <div class="taxi-card">
-
-        <div class="taxi-title">
-          Arrival Taxi
-        </div>
-
-        <div
-          id="taxiArr"
-          class="taxi-time"
-        >
-          -
-        </div>
-
-        <div class="taxi-bar">
-
-          <div
-            id="taxiArrBar"
-            class="taxi-progress"
-            style="width:0%"
-          ></div>
-
-        </div>
-
-        <div
-          id="taxiArrNote"
-          class="taxi-note"
-        >
-        </div>
-
-      </div>
-
-
+    <div class="panel-sub">
+      Seasonal average fuel burn
     </div>
 
-
-    <div
-      style="
-        margin-top:18px;
-        color:#738196;
-        font-size:9px;
-        line-height:1.7;
-      "
-    >
-
-      Taxi averages exclude statistical anomalies using
-      operational limits and IQR analysis.
-
-    </div>
-
-  </div>
-
-</div>
-
-
-
-<!-- =======================================================
-     FUEL + SEASON
-======================================================= -->
-
-<div
-  id="secondGrid"
-  class="second-grid"
->
-
-
-  <div class="panel">
-
-    <div class="panel-head">
-
-      <div>
-
-        <div class="panel-title">
-          Fuel Performance
-        </div>
-
-        <div class="panel-sub">
-          Fuel burn and FOD by season
-        </div>
-
-      </div>
-
-    </div>
-
-
-    <div class="chart-box">
+    <div class="chart">
 
       <canvas
         id="fuelChart"
@@ -1960,129 +1118,21 @@ tbody tr:hover {
 
   </div>
 
-
-
-  <div class="panel">
-
-    <div class="panel-head">
-
-      <div>
-
-        <div class="panel-title">
-          Seasonal Flight Time
-        </div>
-
-        <div class="panel-sub">
-          Average airborne time by season
-        </div>
-
-      </div>
-
-    </div>
-
-
-    <div class="chart-box">
-
-      <canvas
-        id="seasonChart"
-      ></canvas>
-
-    </div>
-
-  </div>
-
 </div>
 
 
-
-<!-- =======================================================
-     SEASON DATA
-======================================================= -->
 
 <div
   id="seasonPanel"
   class="panel table-panel"
 >
 
-  <div class="table-tools">
-
-    <div>
-
-      <div class="panel-title">
-        Seasonal Performance Summary
-      </div>
-
-      <div class="panel-sub">
-        Flight / taxi / fuel statistics
-      </div>
-
-    </div>
-
+  <div class="panel-title">
+    Seasonal Performance
   </div>
 
-
-  <div class="table-scroll">
-
-    <table class="season-table">
-
-      <thead>
-
-        <tr>
-
-          <th>PERIOD</th>
-          <th>FLIGHTS</th>
-          <th>FLT TIME</th>
-          <th>BLOCK</th>
-          <th>DEP TAXI</th>
-          <th>ARR TAXI</th>
-          <th>RAMP FUEL</th>
-          <th>FUEL BURN</th>
-          <th>FOD</th>
-
-        </tr>
-
-      </thead>
-
-      <tbody id="seasonBody">
-      </tbody>
-
-    </table>
-
-  </div>
-
-</div>
-
-
-
-<!-- =======================================================
-     HISTORY
-======================================================= -->
-
-<div
-  id="historyPanel"
-  class="panel table-panel"
->
-
-  <div class="table-tools">
-
-    <div>
-
-      <div class="panel-title">
-        Flight History
-      </div>
-
-      <div class="panel-sub">
-        Individual historical route records
-      </div>
-
-    </div>
-
-    <div
-      id="resultCount"
-      class="result-count"
-    >
-    </div>
-
+  <div class="panel-sub">
+    Outlier-adjusted seasonal averages
   </div>
 
 
@@ -2094,12 +1144,57 @@ tbody tr:hover {
 
         <tr>
 
-          <th>TRIP</th>
-          <th>LEG</th>
+          <th>기간</th>
+          <th>운항횟수</th>
+          <th>평균 FLT TIME</th>
+          <th>평균 BLOCK</th>
+          <th>DEP TAXI</th>
+          <th>ARR TAXI</th>
+          <th>AVG FUEL BURN</th>
+
+        </tr>
+
+      </thead>
+
+      <tbody
+        id="seasonBody"
+      >
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>
+
+
+
+<div
+  id="historyPanel"
+  class="panel table-panel"
+>
+
+  <div class="panel-title">
+    Flight History
+  </div>
+
+  <div class="panel-sub">
+    Individual historical route records
+  </div>
+
+
+  <div class="table-scroll">
+
+    <table>
+
+      <thead>
+
+        <tr>
+
+          <th>DATE</th>
           <th>REQ</th>
           <th>A/C TYPE</th>
           <th>TAIL</th>
-          <th>DATE</th>
           <th>FLT TIME</th>
           <th>BLOCK</th>
           <th>DEP TAXI</th>
@@ -2112,7 +1207,9 @@ tbody tr:hover {
 
       </thead>
 
-      <tbody id="historyBody">
+      <tbody
+        id="historyBody"
+      >
       </tbody>
 
     </table>
@@ -2123,27 +1220,11 @@ tbody tr:hover {
 
 
 
-<!-- =======================================================
-     EMPTY
-======================================================= -->
-
 <div
-  id="emptyState"
-  class="empty-state"
+  id="empty"
+  class="empty"
 >
-
-  <div class="empty-plane">
-    ✈
-  </div>
-
-  <div class="empty-title">
-    Select a route to begin
-  </div>
-
-  <div class="empty-text">
-    Enter departure and arrival ICAO codes to analyze historical performance.
-  </div>
-
+  출발지 / 목적지를 입력해주세요.
 </div>
 
 
@@ -2153,118 +1234,98 @@ tbody tr:hover {
 
 <script>
 
-/* =========================================================
-   CONFIG
-========================================================= */
+/* ========================================================= */
 
 const API_URL =
   'https://script.google.com/macros/s/AKfycbyp8dbHDa9oNpI8nAGJ-ywHo-nv80uKirarLUhc_hIHy7YCXlZm_1C9oye6TqLFZ-no/exec';
 
 
-let flightTrendChart = null;
-let fuelChart = null;
-let seasonChart = null;
+let flightChart =
+  null;
+
+let fuelChart =
+  null;
 
 
-
-/* =========================================================
-   CHART DEFAULTS
-========================================================= */
+/* ========================================================= */
 
 Chart.defaults.color =
-  '#8190a5';
-
+  '#93a4b9';
 
 Chart.defaults.font.family =
   'Inter';
 
-
-Chart.defaults.borderColor =
-  'rgba(255,255,255,.06)';
-
+Chart.defaults.font.size =
+  13;
 
 
-/* =========================================================
-   INITIALIZE
-========================================================= */
+/* ========================================================= */
 
-document.addEventListener(
-  'DOMContentLoaded',
-  () => {
+document
+  .addEventListener(
+    'DOMContentLoaded',
+    () => {
 
-    setupInputs();
+      setupInputs();
 
-    loadAircraft();
+      loadOptions();
 
-  }
-);
-
+    }
+  );
 
 
-/* =========================================================
-   INPUT CONTROL
-========================================================= */
+/* ========================================================= */
 
 function setupInputs() {
 
   ['dep','arr']
-    .forEach(id => {
+    .forEach(
+      id => {
 
-      const el =
-        document
-          .getElementById(id);
-
-
-      el.addEventListener(
-        'input',
-        () => {
-
-          el.value =
-            el.value
-              .toUpperCase()
-              .replace(
-                /[^A-Z0-9]/g,
-                ''
-              )
-              .slice(0,4);
-
-        }
-      );
+        const el =
+          document
+            .getElementById(id);
 
 
-      el.addEventListener(
-        'keydown',
-        e => {
+        el.addEventListener(
+          'input',
+          () => {
 
-          if (
-            e.key === 'Enter'
-          ) {
-
-            searchRoute();
+            el.value =
+              el.value
+                .toUpperCase()
+                .replace(
+                  /[^A-Z0-9]/g,
+                  ''
+                )
+                .slice(
+                  0,
+                  4
+                );
 
           }
+        );
 
-        }
-      );
-
-    });
+      }
+    );
 
 }
 
 
+/* ========================================================= */
 
-/* =========================================================
-   JSONP
-========================================================= */
-
-function jsonp(params) {
+function jsonp(
+  params
+) {
 
   return new Promise(
-    (resolve,reject) => {
+    (
+      resolve,
+      reject
+    ) => {
 
-
-      const callbackName =
-        '__flight_' +
+      const cb =
+        '__cb_' +
         Date.now() +
         '_' +
         Math.floor(
@@ -2280,13 +1341,13 @@ function jsonp(params) {
           );
 
 
-      const search =
+      const query =
         new URLSearchParams({
 
           ...params,
 
           callback:
-            callbackName
+            cb
 
         });
 
@@ -2294,18 +1355,18 @@ function jsonp(params) {
       script.src =
         API_URL +
         '?' +
-        search.toString();
+        query;
 
 
       const timer =
         setTimeout(
           () => {
 
-            clean();
+            cleanup();
 
             reject(
               new Error(
-                'API request timeout'
+                'Timeout'
               )
             );
 
@@ -2314,12 +1375,14 @@ function jsonp(params) {
         );
 
 
-      function clean() {
+      function cleanup() {
 
-        clearTimeout(timer);
+        clearTimeout(
+          timer
+        );
 
         delete window[
-          callbackName
+          cb
         ];
 
         script.remove();
@@ -2327,14 +1390,14 @@ function jsonp(params) {
       }
 
 
-      window[
-        callbackName
-      ] =
+      window[cb] =
         data => {
 
-          clean();
+          cleanup();
 
-          resolve(data);
+          resolve(
+            data
+          );
 
         };
 
@@ -2342,11 +1405,11 @@ function jsonp(params) {
       script.onerror =
         () => {
 
-          clean();
+          cleanup();
 
           reject(
             new Error(
-              'Failed to reach backend'
+              'API connection failed'
             )
           );
 
@@ -2364,31 +1427,20 @@ function jsonp(params) {
 }
 
 
-
 /* =========================================================
-   AIRCRAFT
+   LOAD TYPE / TAIL
 ========================================================= */
 
-async function loadAircraft() {
-
-  if (
-    !API_URL ||
-    API_URL.includes(
-      'PUT_YOUR'
-    )
-  ) {
-
-    return;
-
-  }
-
+async function loadOptions() {
 
   try {
 
     const data =
       await jsonp({
+
         action:
           'aircraft'
+
       });
 
 
@@ -2397,7 +1449,7 @@ async function loadAircraft() {
     }
 
 
-    const select =
+    const ac =
       document
         .getElementById(
           'aircraft'
@@ -2405,36 +1457,69 @@ async function loadAircraft() {
 
 
     (data.aircraft || [])
-      .forEach(ac => {
+      .forEach(
+        value => {
 
-        const option =
-          document
-            .createElement(
-              'option'
-            );
+          const o =
+            document
+              .createElement(
+                'option'
+              );
 
-        option.value =
-          ac;
+          o.value =
+            value;
 
-        option.textContent =
-          ac;
+          o.textContent =
+            value;
 
-        select
-          .appendChild(
-            option
+          ac.appendChild(
+            o
           );
 
-      });
+        }
+      );
+
+
+    const tail =
+      document
+        .getElementById(
+          'tail'
+        );
+
+
+    (data.tails || [])
+      .forEach(
+        value => {
+
+          const o =
+            document
+              .createElement(
+                'option'
+              );
+
+          o.value =
+            value;
+
+          o.textContent =
+            value;
+
+          tail.appendChild(
+            o
+          );
+
+        }
+      );
 
 
   } catch(err) {
 
-    console.error(err);
+    console.error(
+      err
+    );
 
   }
 
 }
-
 
 
 /* =========================================================
@@ -2443,24 +1528,17 @@ async function loadAircraft() {
 
 async function searchRoute() {
 
-
   const dep =
-    document
-      .getElementById(
-        'dep'
-      )
-      .value
-      .trim()
+    valueOf(
+      'dep'
+    )
       .toUpperCase();
 
 
   const arr =
-    document
-      .getElementById(
-        'arr'
-      )
-      .value
-      .trim()
+    valueOf(
+      'arr'
+    )
       .toUpperCase();
 
 
@@ -2470,7 +1548,7 @@ async function searchRoute() {
   ) {
 
     alert(
-      'Departure / Arrival ICAO를 4자리로 입력해주세요.'
+      'ICAO 4자리를 입력해주세요.'
     );
 
     return;
@@ -2478,51 +1556,12 @@ async function searchRoute() {
   }
 
 
-  if (
-    !API_URL ||
-    API_URL.includes(
-      'PUT_YOUR'
-    )
-  ) {
-
-    alert(
-      'API_URL에 Apps Script /exec URL을 입력해주세요.'
-    );
-
-    return;
-
-  }
-
-
-  const aircraft =
-    document
-      .getElementById(
-        'aircraft'
-      )
-      .value;
-
-
-  const fromDate =
-    document
-      .getElementById(
-        'fromDate'
-      )
-      .value;
-
-
-  const toDate =
-    document
-      .getElementById(
-        'toDate'
-      )
-      .value;
-
-
-  setLoading(true);
+  setLoading(
+    true
+  );
 
 
   try {
-
 
     const data =
       await jsonp({
@@ -2537,13 +1576,24 @@ async function searchRoute() {
           arr,
 
         aircraft:
-          aircraft,
+          valueOf(
+            'aircraft'
+          ),
+
+        tail:
+          valueOf(
+            'tail'
+          ),
 
         fromDate:
-          fromDate,
+          valueOf(
+            'fromDate'
+          ),
 
         toDate:
-          toDate
+          valueOf(
+            'toDate'
+          )
 
       });
 
@@ -2551,76 +1601,57 @@ async function searchRoute() {
     if (!data.ok) {
 
       throw new Error(
-        data.error ||
-        'Backend error'
+        data.error
       );
 
     }
 
 
-    renderAll(data);
+    render(
+      data
+    );
 
 
   } catch(err) {
 
-    console.error(err);
-
     alert(
-      'Error: ' +
       err.message
     );
 
   } finally {
 
-    setLoading(false);
+    setLoading(
+      false
+    );
 
   }
 
 }
 
 
+/* ========================================================= */
 
-/* =========================================================
-   RENDER ALL
-========================================================= */
-
-function renderAll(data) {
-
+function render(
+  data
+) {
 
   const history =
-    data.history || [];
+    data.history ||
+    [];
 
 
-  if (!history.length) {
+  if (
+    !history.length
+  ) {
 
     hideResults();
 
-    const empty =
-      document
-        .getElementById(
-          'emptyState'
-        );
-
-
-    empty.style.display =
-      'block';
-
-
-    empty.innerHTML = `
-
-      <div class="empty-plane">
-        ◌
-      </div>
-
-      <div class="empty-title">
-        No historical flights found
-      </div>
-
-      <div class="empty-text">
-        ${escapeHtml(data.route || '')}
-      </div>
-
-    `;
+    document
+      .getElementById(
+        'empty'
+      )
+      .textContent =
+        '조회된 운항기록이 없습니다.';
 
     return;
 
@@ -2629,42 +1660,10 @@ function renderAll(data) {
 
   document
     .getElementById(
-      'emptyState'
+      'empty'
     )
     .style.display =
       'none';
-
-
-  renderRoute(data);
-
-  renderKPI(
-    data.summary
-  );
-
-  renderTaxi(
-    data.summary
-  );
-
-  renderFlightTrend(
-    history,
-    data.seasonal || []
-  );
-
-  renderFuelChart(
-    data.seasonal || []
-  );
-
-  renderSeasonChart(
-    data.seasonal || []
-  );
-
-  renderSeasonTable(
-    data.seasonal || []
-  );
-
-  renderHistory(
-    history
-  );
 
 
   showResults();
@@ -2672,72 +1671,54 @@ function renderAll(data) {
 
   document
     .getElementById(
-      'status'
-    )
-    .textContent =
-      'Updated ' +
-      new Date()
-        .toLocaleTimeString();
-
-}
-
-
-
-/* =========================================================
-   ROUTE
-========================================================= */
-
-function renderRoute(data) {
-
-
-  const filters =
-    data.filters || {};
-
-
-  document
-    .getElementById(
-      'routeName'
+      'routeTitle'
     )
     .textContent =
       data.route;
 
 
-  let meta =
-    `${data.summary.flights} historical flights`;
+  renderKPI(
+    data.summary
+  );
 
 
-  if (
-    filters.aircraft &&
-    filters.aircraft !== 'ALL'
-  ) {
-
-    meta +=
-      ` · ${filters.aircraft}`;
-
-  }
+  renderFlightChart(
+    history
+  );
 
 
-  document
-    .getElementById(
-      'routeMeta'
-    )
-    .textContent =
-      meta;
+  renderFuelChart(
+    data.seasonal ||
+    []
+  );
+
+
+  renderSeason(
+    data.seasonal ||
+    []
+  );
+
+
+  renderHistory(
+    history
+  );
 
 }
-
 
 
 /* =========================================================
    KPI
 ========================================================= */
 
-function renderKPI(s) {
-
+function renderKPI(
+  s
+) {
 
   setText(
     'kpiFlights',
-    number(s.flights)
+    number(
+      s.flights
+    )
   );
 
 
@@ -2749,6 +1730,15 @@ function renderKPI(s) {
 
 
   setText(
+    'kpiFlightSub',
+
+    `${s.flightSamples || 0} used · ` +
+    `${s.flightOutliers || 0} excluded`
+
+  );
+
+
+  setText(
     'kpiBlock',
     s.avgBlockTime ||
     '-'
@@ -2756,23 +1746,50 @@ function renderKPI(s) {
 
 
   setText(
+    'kpiBlockSub',
+
+    `${s.blockSamples || 0} used · ` +
+    `${s.blockOutliers || 0} excluded`
+
+  );
+
+
+  setText(
     'kpiDepTaxi',
-    minuteText(
+    minText(
       s.avgDepTaxi
     )
   );
 
 
   setText(
+    'kpiDepTaxiSub',
+
+    `${s.depTaxiSamples || 0} used · ` +
+    `${s.depTaxiOutliers || 0} excluded`
+
+  );
+
+
+  setText(
     'kpiArrTaxi',
-    minuteText(
+    minText(
       s.avgArrTaxi
     )
   );
 
 
   setText(
-    'kpiBurn',
+    'kpiArrTaxiSub',
+
+    `${s.arrTaxiSamples || 0} used · ` +
+    `${s.arrTaxiOutliers || 0} excluded`
+
+  );
+
+
+  setText(
+    'kpiFuel',
     number(
       s.avgFuelBurn
     )
@@ -2780,160 +1797,37 @@ function renderKPI(s) {
 
 
   setText(
-    'kpiFOD',
-    number(
-      s.avgFOD
-    )
-  );
+    'kpiFuelSub',
 
-}
-
-
-
-/* =========================================================
-   TAXI
-========================================================= */
-
-function renderTaxi(s) {
-
-
-  const dep =
-    Number(
-      s.avgDepTaxi
-    );
-
-
-  const arr =
-    Number(
-      s.avgArrTaxi
-    );
-
-
-  document
-    .getElementById(
-      'taxiDep'
-    )
-    .innerHTML =
-      Number.isFinite(dep)
-
-      ? `${dep.toFixed(1).replace('.0','')}
-         <span>MIN</span>`
-
-      : '-';
-
-
-  document
-    .getElementById(
-      'taxiArr'
-    )
-    .innerHTML =
-      Number.isFinite(arr)
-
-      ? `${arr.toFixed(1).replace('.0','')}
-         <span>MIN</span>`
-
-      : '-';
-
-
-  const depWidth =
-    Number.isFinite(dep)
-      ? Math.min(
-          100,
-          dep / 30 * 100
-        )
-      : 0;
-
-
-  const arrWidth =
-    Number.isFinite(arr)
-      ? Math.min(
-          100,
-          arr / 30 * 100
-        )
-      : 0;
-
-
-  document
-    .getElementById(
-      'taxiDepBar'
-    )
-    .style.width =
-      depWidth + '%';
-
-
-  document
-    .getElementById(
-      'taxiArrBar'
-    )
-    .style.width =
-      arrWidth + '%';
-
-
-  setText(
-
-    'taxiDepNote',
-
-    `${s.depTaxiSamples || 0} samples · ` +
-    `${s.depTaxiOutliers || 0} excluded`
-
-  );
-
-
-  setText(
-
-    'taxiArrNote',
-
-    `${s.arrTaxiSamples || 0} samples · ` +
-    `${s.arrTaxiOutliers || 0} excluded`
+    `${s.fuelSamples || 0} used · ` +
+    `${s.fuelOutliers || 0} excluded`
 
   );
 
 }
-
 
 
 /* =========================================================
    FLIGHT TREND
 ========================================================= */
 
-function renderFlightTrend(
-  history,
-  seasonal
+function renderFlightChart(
+  rows
 ) {
 
-
-  const ctx =
-    document
-      .getElementById(
-        'flightTrendChart'
-      );
-
-
   if (
-    flightTrendChart
+    flightChart
   ) {
-
-    flightTrendChart
-      .destroy();
-
+    flightChart.destroy();
   }
 
 
-  const actual =
-    history
-      .filter(
-        x =>
-          Number.isFinite(
-            Number(
-              x.fltMinutes
-            )
-          )
-      );
-
-
-  flightTrendChart =
+  flightChart =
     new Chart(
-      ctx,
+      document
+        .getElementById(
+          'flightChart'
+        ),
       {
 
         type:
@@ -2942,11 +1836,9 @@ function renderFlightTrend(
         data: {
 
           labels:
-            actual.map(
-              x =>
-                shortDate(
-                  x.date
-                )
+            rows.map(
+              r =>
+                r.date
             ),
 
           datasets: [
@@ -2954,12 +1846,12 @@ function renderFlightTrend(
             {
 
               label:
-                'Actual Flight Time',
+                'Flight Time',
 
               data:
-                actual.map(
-                  x =>
-                    x.fltMinutes
+                rows.map(
+                  r =>
+                    r.fltMinutes
                 ),
 
               borderColor:
@@ -2968,26 +1860,20 @@ function renderFlightTrend(
               backgroundColor:
                 'rgba(77,140,255,.12)',
 
-              pointBackgroundColor:
-                '#64a0ff',
-
-              pointBorderColor:
-                '#091426',
-
-              pointRadius:
-                3,
-
-              pointHoverRadius:
-                6,
-
-              borderWidth:
-                2,
-
               fill:
                 true,
 
               tension:
-                .28
+                .25,
+
+              borderWidth:
+                2,
+
+              pointRadius:
+                4,
+
+              pointHoverRadius:
+                7
 
             }
 
@@ -3004,44 +1890,22 @@ function renderFlightTrend(
           maintainAspectRatio:
             false,
 
-          interaction: {
-
-            mode:
-              'index',
-
-            intersect:
-              false
-
-          },
-
-
           plugins: {
 
             legend: {
-
               display:
                 false
-
             },
 
             tooltip: {
 
-              backgroundColor:
-                '#101d30',
-
-              borderColor:
-                'rgba(255,255,255,.1)',
-
-              borderWidth:
-                1,
-
               callbacks: {
 
                 label:
-                  ctx =>
-                    ' Flight: ' +
+                  c =>
+                    ' Flight Time: ' +
                     minToHHMM(
-                      ctx.raw
+                      c.raw
                     )
 
               }
@@ -3055,21 +1919,14 @@ function renderFlightTrend(
 
             x: {
 
-              grid: {
-                display:
-                  false
-              },
-
               ticks: {
 
                 maxTicksLimit:
-                  10,
-
-                color:
-                  '#64748b',
+                  8,
 
                 font: {
-                  size: 8
+                  size:
+                    12
                 }
 
               }
@@ -3079,26 +1936,15 @@ function renderFlightTrend(
 
             y: {
 
-              grid: {
-
-                color:
-                  'rgba(255,255,255,.045)'
-
-              },
-
               ticks: {
 
-                color:
-                  '#64748b',
-
                 callback:
-                  value =>
-                    minToHHMM(
-                      value
-                    ),
+                  v =>
+                    minToHHMM(v),
 
                 font: {
-                  size: 8
+                  size:
+                    12
                 }
 
               }
@@ -3115,31 +1961,27 @@ function renderFlightTrend(
 }
 
 
-
 /* =========================================================
-   FUEL CHART
+   FUEL
 ========================================================= */
 
 function renderFuelChart(
   rows
 ) {
 
-
-  const ctx =
-    document
-      .getElementById(
-        'fuelChart'
-      );
-
-
-  if (fuelChart) {
+  if (
+    fuelChart
+  ) {
     fuelChart.destroy();
   }
 
 
   fuelChart =
     new Chart(
-      ctx,
+      document
+        .getElementById(
+          'fuelChart'
+        ),
       {
 
         type:
@@ -3149,7 +1991,8 @@ function renderFuelChart(
 
           labels:
             rows.map(
-              x => x.label
+              r =>
+                r.label
             ),
 
           datasets: [
@@ -3161,59 +2004,27 @@ function renderFuelChart(
 
               data:
                 rows.map(
-                  x =>
-                    x.avgFuelBurn
+                  r =>
+                    r.avgFuelBurn
                 ),
 
               borderColor:
-                '#f5b94c',
+                '#f7b84b',
 
               backgroundColor:
-                'rgba(245,185,76,.08)',
-
-              borderWidth:
-                2,
-
-              pointRadius:
-                4,
-
-              pointBackgroundColor:
-                '#f5b94c',
-
-              tension:
-                .28,
+                'rgba(247,184,75,.12)',
 
               fill:
-                true
-
-            },
-
-
-            {
-
-              label:
-                'FOD',
-
-              data:
-                rows.map(
-                  x =>
-                    x.avgFOD
-                ),
-
-              borderColor:
-                '#42d392',
-
-              borderWidth:
-                2,
-
-              pointRadius:
-                4,
-
-              pointBackgroundColor:
-                '#42d392',
+                true,
 
               tension:
-                .28
+                .25,
+
+              borderWidth:
+                3,
+
+              pointRadius:
+                5
 
             }
 
@@ -3230,50 +2041,16 @@ function renderFuelChart(
           maintainAspectRatio:
             false,
 
-          interaction: {
-
-            mode:
-              'index',
-
-            intersect:
-              false
-
-          },
-
           plugins: {
 
             legend: {
 
               labels: {
 
-                color:
-                  '#8e9bae',
-
-                boxWidth:
-                  9,
-
-                usePointStyle:
-                  true,
-
                 font: {
-                  size: 9
+                  size:
+                    13
                 }
-
-              }
-
-            },
-
-
-            tooltip: {
-
-              backgroundColor:
-                '#101d30',
-
-              callbacks: {
-
-                label:
-                  ctx =>
-                    ` ${ctx.dataset.label}: ${number(ctx.raw)}`
 
               }
 
@@ -3286,15 +2063,11 @@ function renderFuelChart(
 
             x: {
 
-              grid: {
-                display:
-                  false
-              },
-
               ticks: {
 
                 font: {
-                  size: 8
+                  size:
+                    12
                 }
 
               }
@@ -3303,13 +2076,6 @@ function renderFuelChart(
 
 
             y: {
-
-              grid: {
-
-                color:
-                  'rgba(255,255,255,.045)'
-
-              },
 
               ticks: {
 
@@ -3318,7 +2084,8 @@ function renderFuelChart(
                     number(v),
 
                 font: {
-                  size: 8
+                  size:
+                    12
                 }
 
               }
@@ -3333,187 +2100,15 @@ function renderFuelChart(
     );
 
 }
-
-
-
-/* =========================================================
-   SEASON CHART
-========================================================= */
-
-function renderSeasonChart(
-  rows
-) {
-
-
-  const ctx =
-    document
-      .getElementById(
-        'seasonChart'
-      );
-
-
-  if (
-    seasonChart
-  ) {
-
-    seasonChart
-      .destroy();
-
-  }
-
-
-  seasonChart =
-    new Chart(
-      ctx,
-      {
-
-        type:
-          'bar',
-
-        data: {
-
-          labels:
-            rows.map(
-              x =>
-                x.label
-            ),
-
-          datasets: [
-
-            {
-
-              label:
-                'Avg Flight Time',
-
-              data:
-                rows.map(
-                  x =>
-                    x.avgFlightMinutes
-                ),
-
-              backgroundColor:
-                'rgba(40,215,229,.58)',
-
-              borderColor:
-                '#28d7e5',
-
-              borderWidth:
-                1,
-
-              borderRadius:
-                7,
-
-              maxBarThickness:
-                38
-
-            }
-
-          ]
-
-        },
-
-
-        options: {
-
-          responsive:
-            true,
-
-          maintainAspectRatio:
-            false,
-
-          plugins: {
-
-            legend: {
-              display:
-                false
-            },
-
-            tooltip: {
-
-              backgroundColor:
-                '#101d30',
-
-              callbacks: {
-
-                label:
-                  ctx =>
-                    ' Avg Flight: ' +
-                    minToHHMM(
-                      ctx.raw
-                    )
-
-              }
-
-            }
-
-          },
-
-
-          scales: {
-
-            x: {
-
-              grid: {
-                display:
-                  false
-              },
-
-              ticks: {
-
-                color:
-                  '#718096',
-
-                font: {
-                  size: 8
-                }
-
-              }
-
-            },
-
-
-            y: {
-
-              grid: {
-
-                color:
-                  'rgba(255,255,255,.045)'
-
-              },
-
-              ticks: {
-
-                callback:
-                  v =>
-                    minToHHMM(v),
-
-                font: {
-                  size: 8
-                }
-
-              }
-
-            }
-
-          }
-
-        }
-
-      }
-    );
-
-}
-
 
 
 /* =========================================================
    SEASON TABLE
 ========================================================= */
 
-function renderSeasonTable(
+function renderSeason(
   rows
 ) {
-
 
   const body =
     document
@@ -3527,8 +2122,7 @@ function renderSeasonTable(
 
 
   rows.forEach(
-    row => {
-
+    r => {
 
       const tr =
         document
@@ -3540,53 +2134,44 @@ function renderSeasonTable(
       tr.innerHTML = `
 
         <td>
-          ${escapeHtml(row.label)}
+          ${escapeHtml(r.label)}
         </td>
 
         <td>
-          ${number(row.flights)}
+          ${number(r.flights)}
         </td>
 
         <td>
-          ${escapeHtml(row.avgFlightTime || '-')}
+          ${escapeHtml(r.avgFlightTime || '-')}
         </td>
 
         <td>
-          ${escapeHtml(row.avgBlockTime || '-')}
+          ${escapeHtml(r.avgBlockTime || '-')}
         </td>
 
         <td>
-          ${minuteText(row.avgDepTaxi)}
+          ${minText(r.avgDepTaxi)}
         </td>
 
         <td>
-          ${minuteText(row.avgArrTaxi)}
+          ${minText(r.avgArrTaxi)}
         </td>
 
         <td>
-          ${number(row.avgRampOutFuel)}
-        </td>
-
-        <td>
-          ${number(row.avgFuelBurn)}
-        </td>
-
-        <td>
-          ${number(row.avgFOD)}
+          ${number(r.avgFuelBurn)}
         </td>
 
       `;
 
 
-      body
-        .appendChild(
-          tr
-        );
+      body.appendChild(
+        tr
+      );
 
-    });
+    }
+  );
 
 }
-
 
 
 /* =========================================================
@@ -3596,13 +2181,6 @@ function renderSeasonTable(
 function renderHistory(
   rows
 ) {
-
-
-  setText(
-    'resultCount',
-    `${rows.length} RECORDS`
-  );
-
 
   const body =
     document
@@ -3619,8 +2197,7 @@ function renderHistory(
     .slice()
     .reverse()
     .forEach(
-      row => {
-
+      r => {
 
         const tr =
           document
@@ -3632,123 +2209,102 @@ function renderHistory(
         tr.innerHTML = `
 
           <td>
-            ${escapeHtml(row.tripNo)}
+            ${escapeHtml(r.date)}
           </td>
 
           <td>
-            ${escapeHtml(row.legNo)}
+            ${escapeHtml(r.requester)}
           </td>
 
           <td>
-            <span class="req-pill">
-              ${escapeHtml(row.requester)}
-            </span>
+            ${escapeHtml(r.aircraft)}
           </td>
 
           <td>
-            ${escapeHtml(row.aircraft)}
-          </td>
-
-          <td>
-            ${escapeHtml(row.tail)}
-          </td>
-
-          <td>
-            ${escapeHtml(row.date)}
-          </td>
-
-          <td>
-            ${escapeHtml(row.fltTime)}
-          </td>
-
-          <td>
-            ${escapeHtml(row.blockTime)}
+            ${escapeHtml(r.tail)}
           </td>
 
           <td class="
-            ${row.depTaxiOutlier
-              ? 'outlier'
-              : ''}
-          ">
-
-            ${minuteText(row.depTaxi)}
-
             ${
-              row.depTaxiOutlier
-
-              ? '<span class="outlier-tag">OUTLIER</span>'
-
-              : ''
+              r.fltOutlier
+                ? 'outlier'
+                : ''
             }
-
+          ">
+            ${escapeHtml(r.fltTime)}
           </td>
 
           <td class="
-            ${row.arrTaxiOutlier
-              ? 'outlier'
-              : ''}
+            ${
+              r.blockOutlier
+                ? 'outlier'
+                : ''
+            }
           ">
+            ${escapeHtml(r.blockTime)}
+          </td>
 
-            ${minuteText(row.arrTaxi)}
-
+          <td class="
             ${
-              row.arrTaxiOutlier
-
-              ? '<span class="outlier-tag">OUTLIER</span>'
-
-              : ''
+              r.depTaxiOutlier
+                ? 'outlier'
+                : ''
             }
-
+          ">
+            ${minText(r.depTaxi)}
           </td>
 
-          <td>
-            ${number(row.rampOutFuel)}
-          </td>
-
-          <td>
-
-            ${number(row.fuelBurn)}
-
+          <td class="
             ${
-              row.fuelBurnCalculated
-
-              ? '<span class="calc">CALC</span>'
-
-              : ''
+              r.arrTaxiOutlier
+                ? 'outlier'
+                : ''
             }
-
+          ">
+            ${minText(r.arrTaxi)}
           </td>
 
           <td>
-            ${number(row.fod)}
+            ${number(r.rampOutFuel)}
+          </td>
+
+          <td class="
+            ${
+              r.fuelBurnOutlier
+                ? 'outlier'
+                : ''
+            }
+          ">
+            ${number(r.fuelBurn)}
+          </td>
+
+          <td>
+            ${number(r.fod)}
           </td>
 
         `;
 
 
-        body
-          .appendChild(
-            tr
-          );
+        body.appendChild(
+          tr
+        );
 
-      });
+      }
+    );
 
 }
 
 
-
-/* =========================================================
-   DISPLAY
-========================================================= */
+/* ========================================================= */
 
 function showResults() {
 
   document
     .getElementById(
-      'routeHeader'
+      'routeTitle'
     )
     .style.display =
-      'flex';
+      'block';
 
 
   document
@@ -3761,15 +2317,7 @@ function showResults() {
 
   document
     .getElementById(
-      'analysisGrid'
-    )
-    .style.display =
-      'grid';
-
-
-  document
-    .getElementById(
-      'secondGrid'
+      'charts'
     )
     .style.display =
       'grid';
@@ -3793,41 +2341,44 @@ function showResults() {
 }
 
 
+/* ========================================================= */
 
 function hideResults() {
 
-
   [
-    'routeHeader',
+    'routeTitle',
     'kpiGrid',
-    'analysisGrid',
-    'secondGrid',
+    'charts',
     'seasonPanel',
     'historyPanel'
   ]
-    .forEach(
-      id => {
+  .forEach(
+    id => {
 
-        document
-          .getElementById(id)
-          .style.display =
-            'none';
+      document
+        .getElementById(id)
+        .style.display =
+          'none';
 
-      }
-    );
+    }
+  );
+
+
+  document
+    .getElementById(
+      'empty'
+    )
+    .style.display =
+      'block';
 
 }
 
 
-
-/* =========================================================
-   LOADING
-========================================================= */
+/* ========================================================= */
 
 function setLoading(
   value
 ) {
-
 
   document
     .getElementById(
@@ -3835,72 +2386,50 @@ function setLoading(
     )
     .style.display =
       value
-      ? 'block'
-      : 'none';
+        ? 'block'
+        : 'none';
 
 
-  document
-    .getElementById(
-      'status'
-    )
-    .textContent =
-      value
+  setText(
+    'status',
+    value
       ? 'Analyzing...'
-      : 'System Ready';
-
-}
-
-
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function number(
-  value
-) {
-
-
-  if (
-    value === null ||
-    value === undefined ||
-    value === ''
-  ) {
-
-    return '-';
-
-  }
-
-
-  const n =
-    Number(value);
-
-
-  if (
-    !Number.isFinite(n)
-  ) {
-
-    return '-';
-
-  }
-
-
-  return n.toLocaleString(
-    'en-US',
-    {
-      maximumFractionDigits:
-        0
-    }
+      : 'System Ready'
   );
 
 }
 
 
+/* ========================================================= */
 
-function minuteText(
+function valueOf(
+  id
+) {
+
+  return document
+    .getElementById(id)
+    .value
+    .trim();
+
+}
+
+
+function setText(
+  id,
   value
 ) {
 
+  document
+    .getElementById(id)
+    .textContent =
+      value ?? '';
+
+}
+
+
+function number(
+  value
+) {
 
   const n =
     Number(value);
@@ -3909,9 +2438,30 @@ function minuteText(
   if (
     !Number.isFinite(n)
   ) {
-
     return '-';
+  }
 
+
+  return n
+    .toLocaleString(
+      'en-US'
+    );
+
+}
+
+
+function minText(
+  value
+) {
+
+  const n =
+    Number(value);
+
+
+  if (
+    !Number.isFinite(n)
+  ) {
+    return '-';
   }
 
 
@@ -3928,11 +2478,9 @@ function minuteText(
 }
 
 
-
 function minToHHMM(
   value
 ) {
-
 
   const n =
     Number(value);
@@ -3941,9 +2489,7 @@ function minToHHMM(
   if (
     !Number.isFinite(n)
   ) {
-
     return '-';
-
   }
 
 
@@ -3953,12 +2499,14 @@ function minToHHMM(
 
   const h =
     Math.floor(
-      total / 60
+      total /
+      60
     );
 
 
   const m =
-    total % 60;
+    total %
+    60;
 
 
   return (
@@ -3974,61 +2522,9 @@ function minToHHMM(
 }
 
 
-
-function shortDate(
-  date
-) {
-
-
-  if (!date) {
-    return '';
-  }
-
-
-  const p =
-    String(date)
-      .split('-');
-
-
-  if (
-    p.length === 3
-  ) {
-
-    return (
-      p[0].slice(2) +
-      '.' +
-      p[1] +
-      '.' +
-      p[2]
-    );
-
-  }
-
-
-  return date;
-
-}
-
-
-
-function setText(
-  id,
-  value
-) {
-
-  document
-    .getElementById(id)
-    .textContent =
-      value ?? '';
-
-}
-
-
-
 function escapeHtml(
   value
 ) {
-
 
   return String(
     value ?? ''
