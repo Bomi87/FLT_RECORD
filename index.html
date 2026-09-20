@@ -2430,8 +2430,8 @@ function renderFlightChart(
 
   /*
    * Taxi time used for Monthly Block Time is FIXED for the whole year.
-   * We use the midpoint of the overall most-frequent 3-minute taxi group
-   * after taxi outliers are excluded.
+   * We use the UPPER END of the overall most-frequent 3-minute taxi group
+   * after taxi outliers are excluded, for a conservative block-time estimate.
    */
   const depTaxiValues =
     history
@@ -2478,13 +2478,13 @@ function renderFlightChart(
 
 
   const fixedDepTaxi =
-    taxiGroupMidpoint(
+    taxiGroupUpperBound(
       depTaxiStats.typical
     );
 
 
   const fixedArrTaxi =
-    taxiGroupMidpoint(
+    taxiGroupUpperBound(
       arrTaxiStats.typical
     );
 
@@ -2831,7 +2831,7 @@ function renderFlightChart(
 }
 
 
-function taxiGroupMidpoint(
+function taxiGroupUpperBound(
   group
 ) {
 
@@ -2842,10 +2842,7 @@ function taxiGroupMidpoint(
   }
 
 
-  return (
-    group.start +
-    group.end
-  ) / 2;
+  return group.end;
 
 }
 
