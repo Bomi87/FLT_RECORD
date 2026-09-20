@@ -1163,7 +1163,7 @@ td {
     </div>
 
     <div class="panel-sub">
-    · AVG = most frequent range 
+      3-minute taxi groups · AVG = most frequent range · outliers excluded
     </div>
 
     <div class="taxi-legend">
@@ -2363,7 +2363,8 @@ function renderAll(
 
 
   renderFlightChart(
-    monthly
+    monthly,
+    history
   );
 
 
@@ -2477,7 +2478,8 @@ function renderKPI(
 ========================================================= */
 
 function renderFlightChart(
-  rows
+  rows,
+  history
 ) {
 
   if (
@@ -2487,6 +2489,73 @@ function renderFlightChart(
     flightChart.destroy();
 
   }
+
+
+  /*
+   * Taxi time used for Monthly Block Time is FIXED for the whole year.
+   * We use the midpoint of the overall most-frequent 3-minute taxi group
+   * after taxi outliers are excluded.
+   */
+  const depTaxiValues =
+    history
+      .filter(
+        row => !row.depTaxiOutlier
+      )
+      .map(
+        row => numericOrNull(
+          row.depTaxi
+        )
+      )
+      .filter(
+        value => value !== null
+      );
+
+
+  const arrTaxiValues =
+    history
+      .filter(
+        row => !row.arrTaxiOutlier
+      )
+      .map(
+        row => numericOrNull(
+          row.arrTaxi
+        )
+      )
+      .filter(
+        value => value !== null
+      );
+
+
+  const depTaxiStats =
+    taxiGroupedStats(
+      depTaxiValues,
+      3
+    );
+
+
+  const arrTaxiStats =
+    taxiGroupedStats(
+      arrTaxiValues,
+      3
+    );
+
+
+  const fixedDepTaxi =
+    taxiGroupMidpoint(
+      depTaxiStats.typical
+    );
+
+
+  const fixedArrTaxi =
+    taxiGroupMidpoint(
+      arrTaxiStats.typical
+    );
+
+
+  const monthlyFlightCounts =
+    countHistoryFlightsByMonth(
+      history
+    );
 
 
   flightChart =
@@ -2526,30 +2595,22 @@ function renderFlightChart(
                         row.avgFlightMinutes
                       );
 
-                    const dep =
-                      numericOrNull(
-                        row.avgDepTaxi
-                      );
-
-                    const arr =
-                      numericOrNull(
-                        row.avgArrTaxi
-                      );
 
                     if (
                       flt === null ||
-                      dep === null ||
-                      arr === null
+                      fixedDepTaxi === null ||
+                      fixedArrTaxi === null
                     ) {
 
                       return null;
 
                     }
 
+
                     return (
                       flt +
-                      dep +
-                      arr
+                      fixedDepTaxi +
+                      fixedArrTaxi
                     );
 
                   }
@@ -2695,6 +2756,31 @@ function renderFlightChart(
                       ];
 
 
+                    const month =
+                      monthNumberFromMonthlyRow(
+                        row,
+                        context.dataIndex
+                      );
+
+
+                    const flights =
+                      monthlyFlightCounts[
+                        month
+                      ] || 0;
+
+
+                    const depRange =
+                      depTaxiStats.typical
+                        ? depTaxiStats.typical.label + 'm'
+                        : '-';
+
+
+                    const arrRange =
+                      arrTaxiStats.typical
+                        ? arrTaxiStats.typical.label + 'm'
+                        : '-';
+
+
                     return [
 
                       'Avg Block: ' +
@@ -2707,18 +2793,20 @@ function renderFlightChart(
                         row.avgFlightMinutes
                       ),
 
-                      'Avg DEP Taxi: ' +
+                      'DEP Taxi (fixed): ' +
                       minute(
-                        row.avgDepTaxi
-                      ),
+                        fixedDepTaxi
+                      ) +
+                      ` [${depRange}]`,
 
-                      'Avg ARR Taxi: ' +
+                      'ARR Taxi (fixed): ' +
                       minute(
-                        row.avgArrTaxi
-                      ),
+                        fixedArrTaxi
+                      ) +
+                      ` [${arrRange}]`,
 
                       'Flights: ' +
-                      row.flights
+                      flights
 
                     ];
 
@@ -2802,6 +2890,227 @@ function renderFlightChart(
 
       }
     );
+
+}
+
+
+function taxiGroupMidpoint(
+  group
+) {
+
+  if (!group) {
+
+    return null;
+
+  }
+
+
+  return (
+    group.start +
+    group.end
+  ) / 2;
+
+}
+
+
+function countHistoryFlightsByMonth(
+  history
+) {
+
+  const counts = {};
+
+
+  for (
+    let month = 1;
+    month <= 12;
+    month++
+  ) {
+
+    counts[month] = 0;
+
+  }
+
+
+  history.forEach(
+    row => {
+
+      const month =
+        monthNumberFromHistoryDate(
+          row.date
+        );
+
+
+      if (
+        month >= 1 &&
+        month <= 12
+      ) {
+
+        counts[month] += 1;
+
+      }
+
+    }
+  );
+
+
+  return counts;
+
+}
+
+
+function monthNumberFromHistoryDate(
+  value
+) {
+
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
+
+    return null;
+
+  }
+
+
+  const text =
+    String(value).trim();
+
+
+  const ymd =
+    text.match(
+      /^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/
+    );
+
+
+  if (ymd) {
+
+    return Number(
+      ymd[2]
+    );
+
+  }
+
+
+  const parsed =
+    new Date(text);
+
+
+  if (
+    !Number.isNaN(
+      parsed.getTime()
+    )
+  ) {
+
+    return (
+      parsed.getMonth() +
+      1
+    );
+
+  }
+
+
+  return null;
+
+}
+
+
+function monthNumberFromMonthlyRow(
+  row,
+  index
+) {
+
+  const direct =
+    numericOrNull(
+      row.month
+    );
+
+
+  if (
+    direct !== null &&
+    direct >= 1 &&
+    direct <= 12
+  ) {
+
+    return Math.round(
+      direct
+    );
+
+  }
+
+
+  const label =
+    String(
+      row.label || ''
+    )
+      .trim()
+      .toUpperCase();
+
+
+  const monthNames = {
+    JAN: 1,
+    JANUARY: 1,
+    FEB: 2,
+    FEBRUARY: 2,
+    MAR: 3,
+    MARCH: 3,
+    APR: 4,
+    APRIL: 4,
+    MAY: 5,
+    JUN: 6,
+    JUNE: 6,
+    JUL: 7,
+    JULY: 7,
+    AUG: 8,
+    AUGUST: 8,
+    SEP: 9,
+    SEPT: 9,
+    SEPTEMBER: 9,
+    OCT: 10,
+    OCTOBER: 10,
+    NOV: 11,
+    NOVEMBER: 11,
+    DEC: 12,
+    DECEMBER: 12
+  };
+
+
+  if (
+    monthNames[label]
+  ) {
+
+    return monthNames[label];
+
+  }
+
+
+  const koreanMonth =
+    label.match(
+      /^(\d{1,2})\s*월$/
+    );
+
+
+  if (koreanMonth) {
+
+    const month =
+      Number(
+        koreanMonth[1]
+      );
+
+
+    if (
+      month >= 1 &&
+      month <= 12
+    ) {
+
+      return month;
+
+    }
+
+  }
+
+
+  return index + 1;
 
 }
 
