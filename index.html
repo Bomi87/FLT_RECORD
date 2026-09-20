@@ -1249,15 +1249,17 @@ td {
 
           <th>TAIL</th>
 
-          <th>FLT TIME</th>
-
           <th>BLOCK</th>
+
+          <th>FLT TIME</th>
 
           <th>DEP TAXI</th>
 
           <th>ARR TAXI</th>
 
           <th>RAMP OUT FUEL</th>
+
+          <th>FUEL BURN</th>
 
           <th>FOD</th>
 
@@ -4532,12 +4534,12 @@ function renderHistory(
             ${escapeHtml(row.tail)}
           </td>
 
-          <td class="${row.fltOutlier ? 'outlier' : ''}">
-            ${escapeHtml(row.fltTime)}
-          </td>
-
           <td class="${row.blockOutlier ? 'outlier' : ''}">
             ${escapeHtml(row.blockTime)}
+          </td>
+
+          <td class="${row.fltOutlier ? 'outlier' : ''}">
+            ${escapeHtml(row.fltTime)}
           </td>
 
           <td class="${row.depTaxiOutlier ? 'outlier' : ''}">
@@ -4552,7 +4554,12 @@ function renderHistory(
             ${number(row.rampOutFuel)}
           </td>
 
+          
           <td>
+            ${number(row.fuelBurn)}
+          </td>
+
+<td>
             ${number(row.fod)}
           </td>
 
