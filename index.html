@@ -2294,7 +2294,8 @@ function renderAll(
    *   SON = Sep / Oct / Nov
    *
    * Seasonal sample rule:
-   *   4 or fewer samples -> no outlier filtering
+   *   1 to 2 samples     -> no outlier filtering
+   *   3 to 4 samples     -> MAD modified z-score (> 3.5)
    *   5 to 9 samples     -> 2.0 × IQR
    *   10+ samples        -> 1.5 × IQR
    *
@@ -2614,7 +2615,7 @@ function renderKPI(
 
 
 /* =========================================================
-   FLIGHT TIME OUTLIER — SEASONAL ADAPTIVE IQR
+   FLIGHT TIME OUTLIER — SEASONAL MAD + ADAPTIVE IQR
 ========================================================= */
 
 /*
@@ -2754,6 +2755,55 @@ function percentile(
     sortedValues[upper] *
       weight
   );
+
+}
+
+
+/*
+ * Median helper for MAD filtering.
+ */
+function median(
+  values
+) {
+
+  if (
+    !values ||
+    !values.length
+  ) {
+
+    return null;
+
+  }
+
+
+  const sorted =
+    values
+      .slice()
+      .sort(
+        (a, b) =>
+          a - b
+      );
+
+
+  const middle =
+    Math.floor(
+      sorted.length / 2
+    );
+
+
+  if (
+    sorted.length % 2
+  ) {
+
+    return sorted[middle];
+
+  }
+
+
+  return (
+    sorted[middle - 1] +
+    sorted[middle]
+  ) / 2;
 
 }
 
@@ -2917,16 +2967,41 @@ function applySeasonalFlightTimeIqrRule(
         ) {
 
           seasonStats[season] = {
-            q1: null,
-            q3: null,
-            iqr: null,
-            lower: null,
-            upper: null,
-            multiplier: null,
-            filtering: false,
-            samples: 0,
-            used: 0,
-            excluded: 0
+            method:
+              'NONE',
+
+            samples:
+              0,
+
+            used:
+              0,
+
+            excluded:
+              0,
+
+            median:
+              null,
+
+            mad:
+              null,
+
+            q1:
+              null,
+
+            q3:
+              null,
+
+            iqr:
+              null,
+
+            lower:
+              null,
+
+            upper:
+              null,
+
+            multiplier:
+              null
           };
 
           return;
@@ -2934,10 +3009,11 @@ function applySeasonalFlightTimeIqrRule(
         }
 
 
-        const sorted =
+        const values =
           items
             .map(
-              item => item.value
+              item =>
+                item.value
             )
             .sort(
               (a, b) =>
@@ -2946,51 +3022,141 @@ function applySeasonalFlightTimeIqrRule(
 
 
         /*
-         * Seasonal sample-size rule:
-         *   <= 4  -> no filtering
-         *   5–9   -> 2.0 × IQR
-         *   >= 10 -> 1.5 × IQR
+         * Seasonal FLT TIME filtering:
+         *
+         * 1–2 samples:
+         *   No filtering.
+         *
+         * 3–4 samples:
+         *   MAD / modified z-score.
+         *   |modified z| > 3.5 => outlier.
+         *
+         *   modified z =
+         *     0.6745 * (x - median) / MAD
+         *
+         *   If MAD = 0, no automatic removal.
+         *
+         * 5–9 samples:
+         *   2.0 × IQR
+         *
+         * 10+ samples:
+         *   1.5 × IQR
          */
-        const seasonMultiplier =
-          items.length <= 4
-            ? null
-            : items.length <= 9
+        const sampleCount =
+          items.length;
+
+
+        let method =
+          'NONE';
+
+
+        let medianValue =
+          null;
+
+
+        let mad =
+          null;
+
+
+        let q1 =
+          null;
+
+
+        let q3 =
+          null;
+
+
+        let iqr =
+          null;
+
+
+        let lower =
+          null;
+
+
+        let upper =
+          null;
+
+
+        let multiplier =
+          null;
+
+
+        if (
+          sampleCount >= 3 &&
+          sampleCount <= 4
+        ) {
+
+          method =
+            'MAD';
+
+
+          medianValue =
+            median(
+              values
+            );
+
+
+          const absoluteDeviations =
+            values.map(
+              value =>
+                Math.abs(
+                  value -
+                  medianValue
+                )
+            );
+
+
+          mad =
+            median(
+              absoluteDeviations
+            );
+
+        } else if (
+          sampleCount >= 5
+        ) {
+
+          method =
+            'IQR';
+
+
+          multiplier =
+            sampleCount <= 9
               ? 2.0
               : 1.5;
 
 
-        const q1 =
-          percentile(
-            sorted,
-            .25
-          );
+          q1 =
+            percentile(
+              values,
+              .25
+            );
 
 
-        const q3 =
-          percentile(
-            sorted,
-            .75
-          );
+          q3 =
+            percentile(
+              values,
+              .75
+            );
 
 
-        const iqr =
-          q3 - q1;
+          iqr =
+            q3 -
+            q1;
 
 
-        const lower =
-          seasonMultiplier === null
-            ? null
-            : q1 -
-              seasonMultiplier *
-              iqr;
+          lower =
+            q1 -
+            multiplier *
+            iqr;
 
 
-        const upper =
-          seasonMultiplier === null
-            ? null
-            : q3 +
-              seasonMultiplier *
-              iqr;
+          upper =
+            q3 +
+            multiplier *
+            iqr;
+
+        }
 
 
         let seasonUsed =
@@ -3004,27 +3170,77 @@ function applySeasonalFlightTimeIqrRule(
         items.forEach(
           item => {
 
-            const isOutlier =
-              seasonMultiplier === null
-                ? false
-                : item.value < lower ||
-                  item.value > upper;
+            let isOutlier =
+              false;
 
 
+            if (
+              method === 'MAD' &&
+              mad !== null &&
+              mad > 0
+            ) {
+
+              const modifiedZ =
+                0.6745 *
+                (
+                  item.value -
+                  medianValue
+                ) /
+                mad;
+
+
+              isOutlier =
+                Math.abs(
+                  modifiedZ
+                ) >
+                3.5;
+
+            } else if (
+              method === 'IQR' &&
+              lower !== null &&
+              upper !== null
+            ) {
+
+              isOutlier =
+                item.value < lower ||
+                item.value > upper;
+
+            }
+
+
+            /*
+             * NONE:
+             *   1–2 samples, or
+             *   MAD = 0 in a 3–4 sample season.
+             *   In both cases, do not automatically remove.
+             */
             item.row.fltOutlier =
               isOutlier;
 
 
-            if (isOutlier) {
+            if (
+              isOutlier
+            ) {
 
-              excluded += 1;
-              seasonExcluded += 1;
+              excluded +=
+                1;
+
+
+              seasonExcluded +=
+                1;
 
             } else {
 
-              used += 1;
-              seasonUsed += 1;
-              sum += item.value;
+              used +=
+                1;
+
+
+              seasonUsed +=
+                1;
+
+
+              sum +=
+                item.value;
 
             }
 
@@ -3033,6 +3249,24 @@ function applySeasonalFlightTimeIqrRule(
 
 
         seasonStats[season] = {
+          method:
+            method,
+
+          samples:
+            sampleCount,
+
+          used:
+            seasonUsed,
+
+          excluded:
+            seasonExcluded,
+
+          median:
+            medianValue,
+
+          mad:
+            mad,
+
           q1:
             q1,
 
@@ -3049,21 +3283,7 @@ function applySeasonalFlightTimeIqrRule(
             upper,
 
           multiplier:
-            seasonMultiplier,
-
-          filtering:
-            seasonMultiplier === null
-              ? false
-              : true,
-
-          samples:
-            items.length,
-
-          used:
-            seasonUsed,
-
-          excluded:
-            seasonExcluded
+            multiplier
         };
 
       }
