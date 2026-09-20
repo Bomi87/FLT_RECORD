@@ -1247,8 +1247,6 @@ td {
 
           <th>REQ</th>
 
-          <th>A/C TYPE</th>
-
           <th>TAIL</th>
 
           <th>FLT TIME</th>
@@ -2213,6 +2211,30 @@ function renderAll(
     [];
 
 
+  /*
+   * FLT TIME outlier rule:
+   * Use a more tolerant 2.0 × IQR rule for the whole selected route sample.
+   *
+   * Taxi outlier flags remain unchanged.
+   */
+  const flightIqrStats =
+    applyFlightTimeIqrRule(
+      history,
+      2.0
+    );
+
+
+  /*
+   * Rebuild monthly AVG FLT TIME from the raw history using the
+   * new 2.0 × IQR flight-time rule.
+   */
+  const monthlyWithFlightIqr =
+    rebuildMonthlyFlightAverages(
+      monthly,
+      history
+    );
+
+
   if (
     !history.length
   ) {
@@ -2289,7 +2311,7 @@ function renderAll(
    */
   setText(
     'taxiSummaryTitle',
-    `Taxi Time Summary (${dep} → ${arr})`
+    'Taxi Time Summary'
   );
 
 
@@ -2300,18 +2322,22 @@ function renderAll(
 
 
   renderKPI(
-    data.summary
+    data.summary,
+    flightIqrStats,
+    history
   );
 
 
   renderFlightChart(
-    monthly,
+    monthlyWithFlightIqr,
     history
   );
 
 
   renderTaxiSummaryChart(
-    history
+    history,
+    dep,
+    arr
   );
 
 
@@ -2327,8 +2353,97 @@ function renderAll(
 ========================================================= */
 
 function renderKPI(
-  summary
+  summary,
+  flightIqrStats,
+  history
 ) {
+
+  /*
+   * Taxi KPI uses the same definition as Taxi Time Summary:
+   * - remove taxi outliers
+   * - group samples into 3-minute ranges
+   * - AVG = most frequent range
+   * - display the UPPER END of that range
+   */
+  const depTaxiValues =
+    history
+      .filter(
+        row => !row.depTaxiOutlier
+      )
+      .map(
+        row => numericOrNull(
+          row.depTaxi
+        )
+      )
+      .filter(
+        value => value !== null
+      );
+
+
+  const arrTaxiValues =
+    history
+      .filter(
+        row => !row.arrTaxiOutlier
+      )
+      .map(
+        row => numericOrNull(
+          row.arrTaxi
+        )
+      )
+      .filter(
+        value => value !== null
+      );
+
+
+  const depTaxiStats =
+    taxiGroupedStats(
+      depTaxiValues,
+      3
+    );
+
+
+  const arrTaxiStats =
+    taxiGroupedStats(
+      arrTaxiValues,
+      3
+    );
+
+
+  const depTaxiKpi =
+    taxiGroupUpperBound(
+      depTaxiStats.typical
+    );
+
+
+  const arrTaxiKpi =
+    taxiGroupUpperBound(
+      arrTaxiStats.typical
+    );
+
+
+  const depTaxiRangeLabel =
+    depTaxiStats.typical
+      ? depTaxiStats.typical.label + 'm'
+      : '-';
+
+
+  const arrTaxiRangeLabel =
+    arrTaxiStats.typical
+      ? arrTaxiStats.typical.label + 'm'
+      : '-';
+
+
+  const depTaxiRangeCount =
+    depTaxiStats.typical
+      ? depTaxiStats.typical.count
+      : 0;
+
+
+  const arrTaxiRangeCount =
+    arrTaxiStats.typical
+      ? arrTaxiStats.typical.count
+      : 0;
+
 
   setText(
     'kpiFlights',
@@ -2340,8 +2455,12 @@ function renderKPI(
 
   setText(
     'kpiFlight',
-    summary.avgFlightTime ||
-    '-'
+    flightIqrStats &&
+    flightIqrStats.avg !== null
+      ? minToHHMM(
+          flightIqrStats.avg
+        )
+      : '-'
   );
 
 
@@ -2349,8 +2468,8 @@ function renderKPI(
 
     'kpiFlightSub',
 
-    `${summary.flightSamples || 0} used · ` +
-    `${summary.flightOutliers || 0} excluded`
+    `${flightIqrStats ? flightIqrStats.used : 0} used · ` +
+    `${flightIqrStats ? flightIqrStats.excluded : 0} excluded`
 
   );
 
@@ -2375,7 +2494,7 @@ function renderKPI(
   setText(
     'kpiDepTaxi',
     minute(
-      summary.avgDepTaxi
+      depTaxiKpi
     )
   );
 
@@ -2384,8 +2503,9 @@ function renderKPI(
 
     'kpiDepTaxiSub',
 
-    `${summary.depTaxiSamples || 0} used · ` +
-    `${summary.depTaxiOutliers || 0} excluded`
+    depTaxiStats.typical
+      ? `${depTaxiRangeLabel} · n=${depTaxiRangeCount}`
+      : '-'
 
   );
 
@@ -2393,7 +2513,7 @@ function renderKPI(
   setText(
     'kpiArrTaxi',
     minute(
-      summary.avgArrTaxi
+      arrTaxiKpi
     )
   );
 
@@ -2402,9 +2522,477 @@ function renderKPI(
 
     'kpiArrTaxiSub',
 
-    `${summary.arrTaxiSamples || 0} used · ` +
-    `${summary.arrTaxiOutliers || 0} excluded`
+    arrTaxiStats.typical
+      ? `${arrTaxiRangeLabel} · n=${arrTaxiRangeCount}`
+      : '-'
 
+  );
+
+}
+
+
+/* =========================================================
+   FLIGHT TIME OUTLIER — 2.0 × IQR
+========================================================= */
+
+/*
+ * Convert "H:MM" / "HH:MM" flight time text into minutes.
+ * Numeric minute values are also accepted.
+ */
+function flightTimeToMinutes(
+  value
+) {
+
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
+
+    return null;
+
+  }
+
+
+  if (
+    typeof value === 'number'
+  ) {
+
+    return Number.isFinite(value)
+      ? value
+      : null;
+
+  }
+
+
+  const text =
+    String(value)
+      .trim();
+
+
+  const hhmm =
+    text.match(
+      /^(\d{1,3}):(\d{1,2})$/
+    );
+
+
+  if (hhmm) {
+
+    const hours =
+      Number(hhmm[1]);
+
+
+    const minutes =
+      Number(hhmm[2]);
+
+
+    if (
+      Number.isFinite(hours) &&
+      Number.isFinite(minutes) &&
+      minutes >= 0 &&
+      minutes < 60
+    ) {
+
+      return (
+        hours * 60 +
+        minutes
+      );
+
+    }
+
+  }
+
+
+  const numeric =
+    Number(text);
+
+
+  return Number.isFinite(numeric)
+    ? numeric
+    : null;
+
+}
+
+
+/*
+ * Linear-interpolated percentile.
+ */
+function percentile(
+  sortedValues,
+  p
+) {
+
+  if (
+    !sortedValues.length
+  ) {
+
+    return null;
+
+  }
+
+
+  if (
+    sortedValues.length === 1
+  ) {
+
+    return sortedValues[0];
+
+  }
+
+
+  const index =
+    (sortedValues.length - 1) *
+    p;
+
+
+  const lower =
+    Math.floor(index);
+
+
+  const upper =
+    Math.ceil(index);
+
+
+  if (
+    lower === upper
+  ) {
+
+    return sortedValues[lower];
+
+  }
+
+
+  const weight =
+    index - lower;
+
+
+  return (
+    sortedValues[lower] *
+      (1 - weight) +
+    sortedValues[upper] *
+      weight
+  );
+
+}
+
+
+/*
+ * Apply the FLT TIME outlier rule to the entire selected route sample.
+ *
+ * Rule:
+ *   Lower bound = Q1 - multiplier × IQR
+ *   Upper bound = Q3 + multiplier × IQR
+ *
+ * The user requested multiplier = 2.0.
+ *
+ * This intentionally overwrites row.fltOutlier from the backend so that:
+ *   - Flight History highlighting
+ *   - AVG FLIGHT TIME KPI
+ *   - Monthly Block Time
+ * all use the same relaxed rule.
+ */
+function applyFlightTimeIqrRule(
+  history,
+  multiplier
+) {
+
+  const samples =
+    history
+      .map(
+        row => ({
+          row:
+            row,
+
+          value:
+            flightTimeToMinutes(
+              row.fltTime
+            )
+        })
+      )
+      .filter(
+        item =>
+          item.value !== null
+      );
+
+
+  if (
+    !samples.length
+  ) {
+
+    return {
+      q1: null,
+      q3: null,
+      iqr: null,
+      lower: null,
+      upper: null,
+      used: 0,
+      excluded: 0,
+      avg: null
+    };
+
+  }
+
+
+  const sorted =
+    samples
+      .map(
+        item => item.value
+      )
+      .sort(
+        (a, b) =>
+          a - b
+      );
+
+
+  const q1 =
+    percentile(
+      sorted,
+      .25
+    );
+
+
+  const q3 =
+    percentile(
+      sorted,
+      .75
+    );
+
+
+  const iqr =
+    q3 - q1;
+
+
+  const lower =
+    q1 -
+    multiplier *
+    iqr;
+
+
+  const upper =
+    q3 +
+    multiplier *
+    iqr;
+
+
+  let used =
+    0;
+
+
+  let excluded =
+    0;
+
+
+  let sum =
+    0;
+
+
+  samples.forEach(
+    item => {
+
+      const isOutlier =
+        item.value < lower ||
+        item.value > upper;
+
+
+      item.row.fltOutlier =
+        isOutlier;
+
+
+      /*
+       * Store parsed minutes so all later calculations use
+       * exactly the same source value.
+       */
+      item.row.__fltMinutes =
+        item.value;
+
+
+      if (isOutlier) {
+
+        excluded += 1;
+
+      } else {
+
+        used += 1;
+        sum += item.value;
+
+      }
+
+    }
+  );
+
+
+  /*
+   * Rows without a valid FLT TIME should not be marked as outliers.
+   */
+  history.forEach(
+    row => {
+
+      if (
+        flightTimeToMinutes(
+          row.fltTime
+        ) === null
+      ) {
+
+        row.fltOutlier =
+          false;
+
+      }
+
+    }
+  );
+
+
+  return {
+    q1:
+      q1,
+
+    q3:
+      q3,
+
+    iqr:
+      iqr,
+
+    lower:
+      lower,
+
+    upper:
+      upper,
+
+    used:
+      used,
+
+    excluded:
+      excluded,
+
+    avg:
+      used
+        ? sum / used
+        : null
+  };
+
+}
+
+
+/*
+ * Recalculate each calendar month's AVG FLT TIME using only
+ * flight records that survive the 2.0 × IQR rule.
+ *
+ * The original monthly rows are retained so month labels/order stay unchanged.
+ */
+function rebuildMonthlyFlightAverages(
+  monthlyRows,
+  history
+) {
+
+  const monthBuckets = {};
+
+
+  for (
+    let month = 1;
+    month <= 12;
+    month++
+  ) {
+
+    monthBuckets[month] = [];
+
+  }
+
+
+  history.forEach(
+    row => {
+
+      if (
+        row.fltOutlier
+      ) {
+
+        return;
+
+      }
+
+
+      const month =
+        monthNumberFromHistoryDate(
+          row.date
+        );
+
+
+      const minutes =
+        row.__fltMinutes !== undefined
+          ? numericOrNull(
+              row.__fltMinutes
+            )
+          : flightTimeToMinutes(
+              row.fltTime
+            );
+
+
+      if (
+        month >= 1 &&
+        month <= 12 &&
+        minutes !== null
+      ) {
+
+        monthBuckets[month]
+          .push(
+            minutes
+          );
+
+      }
+
+    }
+  );
+
+
+  return monthlyRows.map(
+    (
+      row,
+      index
+    ) => {
+
+      const month =
+        monthNumberFromMonthlyRow(
+          row,
+          index
+        );
+
+
+      const values =
+        monthBuckets[month] ||
+        [];
+
+
+      const avg =
+        values.length
+          ? values.reduce(
+              (sum, value) =>
+                sum + value,
+              0
+            ) /
+            values.length
+          : null;
+
+
+      return {
+        ...row,
+
+        avgFlightMinutes:
+          avg,
+
+        avgFlightTime:
+          avg !== null
+            ? minToHHMM(avg)
+            : '-',
+
+        /*
+         * This count is the number of FLT TIME samples actually used
+         * in the monthly average. Tooltip "Flights" is still counted
+         * separately from raw Flight History as requested.
+         */
+        flightSamples:
+          values.length
+      };
+
+    }
   );
 
 }
@@ -3101,7 +3689,9 @@ const taxiDepArrDivider = {
 
 
 function renderTaxiSummaryChart(
-  rows
+  rows,
+  dep,
+  arr
 ) {
 
   if (
@@ -3237,8 +3827,8 @@ function renderTaxiSummaryChart(
         data: {
 
           labels: [
-            'DEP',
-            'ARR'
+            `DEP (${dep})`,
+            `ARR (${arr})`
           ],
 
 
@@ -3798,10 +4388,6 @@ function renderHistory(
 
           <td>
             ${escapeHtml(row.requester)}
-          </td>
-
-          <td>
-            ${escapeHtml(row.aircraft)}
           </td>
 
           <td>
