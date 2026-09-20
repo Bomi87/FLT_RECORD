@@ -4302,10 +4302,9 @@ function renderFlightChart(
             padding: {
 
               /*
-               * LOW SAMPLE uses a two-line datalabel.
-               * Give the chart extra headroom and side room so
-               * the first / last point labels do not collide with
-               * the y-axis or get clipped by the canvas edge.
+               * Keep JAN / DEC points away from the y-axis and
+               * outer canvas edge so their labels can stay centered
+               * above the point just like the other months.
                */
               top:
                 hasLowSample
@@ -4319,19 +4318,27 @@ function renderFlightChart(
               right:
                 hasLowSample
                   ? (
-                      isMobile ? 22 : 34
+                      isMobile ? 30 : 46
                     )
-                  : 10,
+                  : (
+                      isMobile ? 18 : 28
+                    ),
 
               bottom:
-                0,
+                hasLowSample
+                  ? (
+                      isMobile ? 18 : 20
+                    )
+                  : 0,
 
               left:
                 hasLowSample
                   ? (
-                      isMobile ? 22 : 34
+                      isMobile ? 30 : 46
                     )
-                  : 10
+                  : (
+                      isMobile ? 18 : 28
+                    )
 
             }
 
@@ -4355,178 +4362,136 @@ function renderFlightChart(
             datalabels: {
 
               /*
-               * Monthly Block Time HH:MM labels:
-               * keep the labels bright and readable regardless
-               * of the seasonal line color behind them.
+               * Use two independent labels:
+               * - HH:MM always stays centered above the point.
+               * - LOW SAMPLE sits below the point only when needed.
+               *
+               * This avoids the JAN / DEC edge points being pushed
+               * sideways merely to make room for the warning text.
                */
-              color:
-                '#ffffff',
+              labels: {
 
-              textStrokeColor:
-                'transparent',
+                time: {
 
-              textStrokeWidth:
-                0,
+                  color:
+                    '#ffffff',
 
-              anchor:
-                'end',
+                  textStrokeColor:
+                    'transparent',
 
-              /*
-               * Keep edge labels inside the plotting area.
-               * - first visible point  -> label to the right
-               * - last visible point   -> label to the left
-               * - all other points     -> label above
-               */
-              align:
-                context => {
+                  textStrokeWidth:
+                    0,
 
-                  const data =
-                    context.chart &&
-                    context.chart.data &&
-                    context.chart.data.datasets &&
-                    context.chart.data.datasets[0]
-                      ? context.chart.data.datasets[0].data
-                      : [];
+                  anchor:
+                    'end',
+
+                  align:
+                    'top',
+
+                  offset:
+                    7,
+
+                  textAlign:
+                    'center',
+
+                  clamp:
+                    true,
+
+                  clip:
+                    false,
+
+                  font: {
+
+                    size:
+                      isMobile ? 10 : 12,
+
+                    weight:
+                      'normal'
+
+                  },
+
+                  formatter:
+                    value => {
+
+                      const numeric =
+                        numericOrNull(
+                          value
+                        );
 
 
-                  const visibleIndices =
-                    data
-                      .map(
-                        (
-                          value,
-                          index
-                        ) =>
-                          value === null ||
-                          value === undefined
-                            ? null
-                            : index
-                      )
-                      .filter(
-                        index =>
-                          index !== null
+                      return numeric === null
+                        ? ''
+                        : minToHHMM(
+                            numeric
+                          );
+
+                    }
+
+                },
+
+
+                lowSample: {
+
+                  display:
+                    context => {
+
+                      const row =
+                        rows[
+                          context.dataIndex
+                        ];
+
+
+                      return !!(
+                        row &&
+                        row.lowSample
                       );
 
+                    },
 
-                  if (
-                    !visibleIndices.length
-                  ) {
+                  color:
+                    '#ffffff',
 
-                    return 'top';
+                  textStrokeColor:
+                    'transparent',
 
-                  }
+                  textStrokeWidth:
+                    0,
 
+                  anchor:
+                    'start',
 
-                  const firstIndex =
-                    visibleIndices[0];
+                  align:
+                    'bottom',
 
+                  offset:
+                    7,
 
-                  const lastIndex =
-                    visibleIndices[
-                      visibleIndices.length - 1
-                    ];
+                  textAlign:
+                    'center',
 
+                  clamp:
+                    true,
 
-                  if (
-                    context.dataIndex ===
-                    firstIndex
-                  ) {
+                  clip:
+                    false,
 
-                    return 'right';
+                  font: {
 
-                  }
+                    size:
+                      isMobile ? 9 : 11,
 
+                    weight:
+                      '600'
 
-                  if (
-                    context.dataIndex ===
-                    lastIndex
-                  ) {
+                  },
 
-                    return 'left';
-
-                  }
-
-
-                  return 'top';
-
-                },
-
-              offset:
-                context => {
-
-                  const row =
-                    rows[
-                      context.dataIndex
-                    ];
-
-
-                  return row &&
-                    row.lowSample
-                      ? 9
-                      : 7;
-
-                },
-
-              textAlign:
-                'center',
-
-              clamp:
-                true,
-
-              clip:
-                false,
-
-              font: {
-
-                size:
-                  isMobile ? 10 : 12,
-
-                weight:
-                  'normal'
-
-              },
-
-              formatter:
-                (
-                  value,
-                  context
-                ) => {
-
-                  const numeric =
-                    numericOrNull(
-                      value
-                    );
-
-
-                  if (
-                    numeric === null
-                  ) {
-
-                    return '';
-
-                  }
-
-
-                  const row =
-                    rows[
-                      context.dataIndex
-                    ];
-
-
-                  const label =
-                    minToHHMM(
-                      numeric
-                    );
-
-
-                  return row &&
-                    row.lowSample
-                      ? [
-                          label,
-                          'LOW SAMPLE'
-                        ]
-                      : label;
+                  formatter:
+                    () =>
+                      'LOW SAMPLE'
 
                 }
+
+              }
 
             },
 
@@ -4699,6 +4664,33 @@ function renderFlightChart(
 
                   scale.max +=
                     extra;
+
+
+                  /*
+                   * LOW SAMPLE is drawn below its point. Reserve a
+                   * smaller amount of lower data-space as well so a
+                   * low point warning does not run into the x-axis.
+                   */
+                  if (
+                    hasLowSample
+                  ) {
+
+                    const lowerExtra =
+                      Math.max(
+                        isMobile ? 3 : 2,
+                        range *
+                          (
+                            isMobile
+                              ? .10
+                              : .07
+                          )
+                      );
+
+
+                    scale.min -=
+                      lowerExtra;
+
+                  }
 
                 },
 
