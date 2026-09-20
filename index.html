@@ -4027,8 +4027,9 @@ function renderFlightChart(
 
             padding: {
 
+              /* Extra canvas room for the highest HH:MM label on mobile */
               top:
-                8,
+                isMobile ? 16 : 8,
 
               right:
                 8,
@@ -4235,11 +4236,29 @@ function renderFlightChart(
             y: {
 
               /*
-               * Keep headroom above the highest point so its HH:MM
-               * datalabel remains visible (e.g. NOV 1:30).
+               * Keep enough headroom above an isolated/highest point.
+               * On mobile a 3-minute minimum buffer is guaranteed, so
+               * labels such as 1:21 are not clipped at the top edge.
                */
-              grace:
-                '8%',
+              afterDataLimits:
+                scale => {
+
+                  const range =
+                    Math.max(
+                      1,
+                      scale.max - scale.min
+                    );
+
+                  const extra =
+                    Math.max(
+                      isMobile ? 3 : 2,
+                      range * (isMobile ? .18 : .08)
+                    );
+
+                  scale.max +=
+                    extra;
+
+                },
 
               grid: {
 
