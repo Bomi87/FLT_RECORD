@@ -5250,24 +5250,170 @@ function taxiGroupedStats(
       );
 
 
+  /*
+   * Typical / AVG range selection
+   *
+   * 1) Choose the most frequent 3-minute range.
+   * 2) If multiple ranges are tied for the highest count:
+   *    - when max count >= 2, use the mean of the ACTUAL taxi
+   *      values contained in all tied ranges as the reference;
+   *    - when EVERY occupied range has n=1, there is no useful
+   *      mode, so use the median of all valid taxi values instead.
+   * 3) Choose the tied / occupied range closest to that reference.
+   * 4) If lower / upper ranges are equally close, choose the
+   *    HIGHER range as the conservative tie-break.
+   */
+  const maxCount =
+    Math.max(
+      ...sorted.map(
+        group => group.count
+      )
+    );
+
+
+  const modalGroups =
+    sorted.filter(
+      group =>
+        group.count === maxCount
+    );
+
+
   let typical =
-    sorted[0];
+    modalGroups[0];
 
 
-  sorted.forEach(
-    group => {
+  if (
+    modalGroups.length > 1
+  ) {
 
-      if (
-        group.count > typical.count
-      ) {
+    const tiedValues =
+      modalGroups.flatMap(
+        group => group.values
+      );
 
-        typical =
-          group;
 
-      }
+    let referenceValue;
+
+
+    if (
+      maxCount === 1
+    ) {
+
+      /*
+       * Every occupied 3-minute range has exactly one sample.
+       * In this case there is no meaningful mode, so use the
+       * median of the actual valid taxi values as the reference.
+       */
+      const medianValues =
+        tiedValues
+          .slice()
+          .sort(
+            (a,b) =>
+              a - b
+          );
+
+
+      const middle =
+        Math.floor(
+          medianValues.length / 2
+        );
+
+
+      referenceValue =
+        medianValues.length % 2 === 1
+          ? medianValues[middle]
+          : (
+              medianValues[middle - 1] +
+              medianValues[middle]
+            ) / 2;
+
+    } else {
+
+      /*
+       * Genuine tied modal ranges (n >= 2): use the mean of
+       * the actual values inside those tied modal ranges.
+       */
+      referenceValue =
+        tiedValues.reduce(
+          (sum, value) =>
+            sum + value,
+          0
+        ) /
+        tiedValues.length;
 
     }
-  );
+
+
+    const distanceToGroup =
+      group => {
+
+        if (
+          referenceValue < group.start
+        ) {
+
+          return (
+            group.start -
+            referenceValue
+          );
+
+        }
+
+
+        if (
+          referenceValue > group.end
+        ) {
+
+          return (
+            referenceValue -
+            group.end
+          );
+
+        }
+
+
+        return 0;
+
+      };
+
+
+    typical =
+      modalGroups
+        .slice()
+        .sort(
+          (a,b) => {
+
+            const distanceA =
+              distanceToGroup(a);
+
+
+            const distanceB =
+              distanceToGroup(b);
+
+
+            if (
+              Math.abs(
+                distanceA - distanceB
+              ) > 1e-9
+            ) {
+
+              return (
+                distanceA - distanceB
+              );
+
+            }
+
+
+            /*
+             * Same distance -> choose the higher range.
+             */
+            return (
+              b.start - a.start
+            );
+
+          }
+        )[0];
+
+  }
 
 
   return {
