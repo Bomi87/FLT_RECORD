@@ -2213,14 +2213,45 @@ function renderAll(
 
   /*
    * FLT TIME outlier rule:
-   * Use a more tolerant 2.0 × IQR rule for the whole selected route sample.
+   * Threshold is selected automatically by valid FLT TIME sample count.
+   *
+   *   < 15 samples   -> 2.0 × IQR
+   *   15–29 samples  -> 1.75 × IQR
+   *   30+ samples    -> 1.5 × IQR
    *
    * Taxi outlier flags remain unchanged.
    */
+  /*
+   * FLT TIME outlier threshold changes automatically by sample size:
+   *   < 15 samples  -> 2.0 × IQR
+   *   15–29 samples -> 1.75 × IQR
+   *   30+ samples   -> 1.5 × IQR
+   */
+  const flightSampleCount =
+    history
+      .map(
+        row => flightTimeToMinutes(
+          row.fltTime
+        )
+      )
+      .filter(
+        value => value !== null
+      )
+      .length;
+
+
+  const flightIqrMultiplier =
+    flightSampleCount < 15
+      ? 2.0
+      : flightSampleCount < 30
+        ? 1.75
+        : 1.5;
+
+
   const flightIqrStats =
     applyFlightTimeIqrRule(
       history,
-      2.0
+      flightIqrMultiplier
     );
 
 
@@ -2683,7 +2714,7 @@ function percentile(
  *   Lower bound = Q1 - multiplier × IQR
  *   Upper bound = Q3 + multiplier × IQR
  *
- * The user requested multiplier = 2.0.
+ * The multiplier is supplied dynamically according to sample size.
  *
  * This intentionally overwrites row.fltOutlier from the backend so that:
  *   - Flight History highlighting
@@ -2875,7 +2906,7 @@ function applyFlightTimeIqrRule(
 
 /*
  * Recalculate each calendar month's AVG FLT TIME using only
- * flight records that survive the 2.0 × IQR rule.
+ * flight records that survive the dynamically selected IQR rule.
  *
  * The original monthly rows are retained so month labels/order stay unchanged.
  */
