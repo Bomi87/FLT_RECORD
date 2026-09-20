@@ -232,6 +232,13 @@ select option {
   background: #122137;
 }
 
+/* DEP / ARR placeholder text: keep sample ICAO visible but subtle */
+#dep::placeholder,
+#arr::placeholder {
+  color: rgba(255,255,255,.28);
+  opacity: 1;
+}
+
 input:focus,
 select:focus {
   outline: none;
@@ -944,8 +951,7 @@ td {
   }
 
   /* Hide date range on mobile only */
-  .field:has(#fromDate),
-  .field:has(#toDate) {
+  .date-field {
     display: none;
   }
 
@@ -1045,15 +1051,20 @@ td {
   }
 
   .taxi-chart-wrap {
-    height: 270px;
-    margin-top: 10px;
+    height: 220px;
+    margin-top: 8px;
   }
 
   .taxi-legend {
-    gap: 14px;
-    margin-top: 9px;
-    font-size: 11px;
+    gap: 12px;
+    margin-top: 7px;
+    font-size: 10px;
     flex-wrap: wrap;
+  }
+
+  #taxiGrid .panel {
+    padding-top: 15px;
+    padding-bottom: 13px;
   }
 
   .section-title-row {
@@ -1189,7 +1200,7 @@ td {
     </div>
 
 
-    <div class="field">
+    <div class="field date-field">
 
       <label>
         FROM
@@ -1203,7 +1214,7 @@ td {
     </div>
 
 
-    <div class="field">
+    <div class="field date-field">
 
       <label>
         TO
@@ -4078,7 +4089,7 @@ function renderFlightChart(
               font: {
 
                 size:
-                  12,
+                  isMobile ? 10 : 12,
 
                 weight:
                   'normal'
@@ -4712,13 +4723,13 @@ function renderTaxiSummaryChart(
                 5,
 
               maxBarThickness:
-                isMobile ? 18 : 34,
+                isMobile ? 14 : 34,
 
               categoryPercentage:
-                isMobile ? .44 : .58,
+                isMobile ? .38 : .58,
 
               barPercentage:
-                isMobile ? .58 : .72
+                isMobile ? .52 : .72
 
             },
 
@@ -4748,13 +4759,13 @@ function renderTaxiSummaryChart(
                 5,
 
               maxBarThickness:
-                isMobile ? 18 : 34,
+                isMobile ? 14 : 34,
 
               categoryPercentage:
-                isMobile ? .44 : .58,
+                isMobile ? .38 : .58,
 
               barPercentage:
-                isMobile ? .58 : .72
+                isMobile ? .52 : .72
 
             },
 
@@ -4784,13 +4795,13 @@ function renderTaxiSummaryChart(
                 5,
 
               maxBarThickness:
-                isMobile ? 18 : 34,
+                isMobile ? 14 : 34,
 
               categoryPercentage:
-                isMobile ? .44 : .58,
+                isMobile ? .38 : .58,
 
               barPercentage:
-                isMobile ? .58 : .72
+                isMobile ? .52 : .72
 
             }
 
@@ -4813,7 +4824,7 @@ function renderTaxiSummaryChart(
             padding: {
 
               top:
-                isMobile ? 24 : 36,
+                isMobile ? 14 : 36,
 
               right:
                 isMobile ? 8 : 20,
@@ -4856,7 +4867,7 @@ function renderTaxiSummaryChart(
               font: {
 
                 size:
-                  12,
+                  isMobile ? 10 : 12,
 
                 weight:
                   '700'
@@ -5029,7 +5040,7 @@ function renderTaxiSummaryChart(
                 font: {
 
                   size:
-                    14,
+                    isMobile ? 11 : 14,
 
                   weight:
                     '700'
@@ -5045,6 +5056,9 @@ function renderTaxiSummaryChart(
 
               beginAtZero:
                 true,
+
+              grace:
+                isMobile ? '24%' : '10%', 
 
               grid: {
 
@@ -5063,7 +5077,7 @@ function renderTaxiSummaryChart(
                 font: {
 
                   size:
-                    13
+                    isMobile ? 10 : 13
 
                 }
 
@@ -5972,16 +5986,7 @@ function escapeHtml(
 
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://bomi87.github.io/SK-Aviation-portal/common-auth.js">
-
-/* =========================================================
-   IOS FOCUS ZOOM
-   Prevented at page-load level by the viewport meta tag and
-   18px minimum form-control font size on mobile.
-========================================================= */
-;
-
-</script>
+<script src="https://bomi87.github.io/SK-Aviation-portal/common-auth.js"></script>
 
 </body>
 </html>
