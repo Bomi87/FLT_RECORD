@@ -3367,7 +3367,7 @@ function applySeasonalFlightTimeIqrRule(
          *
          *   If MAD does not identify an outlier, use a conservative
          *   gap fallback only when one end point is clearly isolated:
-         *   - larger adjacent gap >= 10 minutes, AND
+         *   - larger adjacent gap >= 15 minutes, AND
          *   - larger gap >= 2.5 × smaller adjacent gap
          *   This catches cases such as 1:38 / 1:54 / 1:59,
          *   while leaving ordinary clustered variation untouched.
@@ -3503,7 +3503,7 @@ function applySeasonalFlightTimeIqrRule(
 
 
             const GAP_MIN_MINUTES =
-              10;
+              15;
 
 
             const GAP_RATIO =
@@ -4077,6 +4077,15 @@ function renderFlightChart(
       '(max-width: 850px)'
     ).matches;
 
+
+  const hasLowSample =
+    rows.some(
+      row =>
+        row &&
+        row.lowSample
+    );
+
+
   if (
     flightChart
   ) {
@@ -4292,18 +4301,37 @@ function renderFlightChart(
 
             padding: {
 
-              /* Extra canvas room for the highest HH:MM label on mobile */
+              /*
+               * LOW SAMPLE uses a two-line datalabel.
+               * Give the chart extra headroom and side room so
+               * the first / last point labels do not collide with
+               * the y-axis or get clipped by the canvas edge.
+               */
               top:
-                isMobile ? 16 : 8,
+                hasLowSample
+                  ? (
+                      isMobile ? 30 : 26
+                    )
+                  : (
+                      isMobile ? 16 : 10
+                    ),
 
               right:
-                8,
+                hasLowSample
+                  ? (
+                      isMobile ? 22 : 34
+                    )
+                  : 10,
 
               bottom:
                 0,
 
               left:
-                0
+                hasLowSample
+                  ? (
+                      isMobile ? 22 : 34
+                    )
+                  : 10
 
             }
 
@@ -4343,14 +4371,109 @@ function renderFlightChart(
               anchor:
                 'end',
 
+              /*
+               * Keep edge labels inside the plotting area.
+               * - first visible point  -> label to the right
+               * - last visible point   -> label to the left
+               * - all other points     -> label above
+               */
               align:
-                'top',
+                context => {
+
+                  const data =
+                    context.chart &&
+                    context.chart.data &&
+                    context.chart.data.datasets &&
+                    context.chart.data.datasets[0]
+                      ? context.chart.data.datasets[0].data
+                      : [];
+
+
+                  const visibleIndices =
+                    data
+                      .map(
+                        (
+                          value,
+                          index
+                        ) =>
+                          value === null ||
+                          value === undefined
+                            ? null
+                            : index
+                      )
+                      .filter(
+                        index =>
+                          index !== null
+                      );
+
+
+                  if (
+                    !visibleIndices.length
+                  ) {
+
+                    return 'top';
+
+                  }
+
+
+                  const firstIndex =
+                    visibleIndices[0];
+
+
+                  const lastIndex =
+                    visibleIndices[
+                      visibleIndices.length - 1
+                    ];
+
+
+                  if (
+                    context.dataIndex ===
+                    firstIndex
+                  ) {
+
+                    return 'right';
+
+                  }
+
+
+                  if (
+                    context.dataIndex ===
+                    lastIndex
+                  ) {
+
+                    return 'left';
+
+                  }
+
+
+                  return 'top';
+
+                },
 
               offset:
-                7,
+                context => {
+
+                  const row =
+                    rows[
+                      context.dataIndex
+                    ];
+
+
+                  return row &&
+                    row.lowSample
+                      ? 9
+                      : 7;
+
+                },
+
+              textAlign:
+                'center',
 
               clamp:
                 true,
+
+              clip:
+                false,
 
               font: {
 
@@ -4555,8 +4678,23 @@ function renderFlightChart(
 
                   const extra =
                     Math.max(
-                      isMobile ? 3 : 2,
-                      range * (isMobile ? .18 : .08)
+                      hasLowSample
+                        ? (
+                            isMobile ? 5 : 4
+                          )
+                        : (
+                            isMobile ? 3 : 2
+                          ),
+                      range *
+                        (
+                          hasLowSample
+                            ? (
+                                isMobile ? .24 : .14
+                              )
+                            : (
+                                isMobile ? .18 : .08
+                              )
+                        )
                     );
 
                   scale.max +=
