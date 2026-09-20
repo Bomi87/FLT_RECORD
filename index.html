@@ -4740,7 +4740,10 @@ function renderHistory(
 
           
           <td>
-            ${number(row.fuelBurn)}
+            ${fuelBurnFromRampAndFod(
+              row.rampOutFuel,
+              row.fod
+            )}
           </td>
 
 <td>
@@ -5123,6 +5126,50 @@ function minToHHMM(
         2,
         '0'
       )
+  );
+
+}
+
+
+/*
+ * FUEL BURN = RAMP OUT FUEL - FOD
+ *
+ * Returns formatted fuel value or "-" when either source value is missing.
+ */
+function fuelBurnFromRampAndFod(
+  rampOutFuel,
+  fod
+) {
+
+  const ramp =
+    numericOrNull(
+      rampOutFuel
+    );
+
+
+  const finalFuel =
+    numericOrNull(
+      fod
+    );
+
+
+  if (
+    ramp === null ||
+    finalFuel === null
+  ) {
+
+    return '-';
+
+  }
+
+
+  const burn =
+    ramp -
+    finalFuel;
+
+
+  return number(
+    burn
   );
 
 }
