@@ -13,9 +13,13 @@
 <title>Flight Data Analysis</title>
 
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script
+  src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js">
+</script>
 
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<script
+  src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0">
+</script>
 
 
 <link
@@ -36,10 +40,6 @@
 
 
 <style>
-
-/* =========================================================
-   ROOT
-========================================================= */
 
 :root {
 
@@ -64,21 +64,20 @@
   --cyan:
     #2ad6e5;
 
+  --green:
+    #41d398;
+
   --amber:
     #f5b642;
 
-  --green:
-    #41d398;
+  --purple:
+    #a987ff;
 
   --red:
     #ff627a;
 
 }
 
-
-/* =========================================================
-   GENERAL
-========================================================= */
 
 * {
 
@@ -271,9 +270,6 @@ body {
   margin-top:
     9px;
 
-  color:
-    var(--text);
-
   font-size:
     19px;
 
@@ -423,7 +419,7 @@ select:focus {
     0 27px;
 
   border:
-    none;
+    0;
 
   border-radius:
     10px;
@@ -437,9 +433,6 @@ select:focus {
 
   color:
     white;
-
-  font-family:
-    inherit;
 
   font-size:
     14px;
@@ -539,7 +532,7 @@ select:focus {
 
   grid-template-columns:
     repeat(
-      6,
+      5,
       1fr
     );
 
@@ -623,23 +616,6 @@ select:focus {
    PANELS
 ========================================================= */
 
-.chart-grid {
-
-  display:
-    none;
-
-  grid-template-columns:
-    1fr 1fr;
-
-  gap:
-    16px;
-
-  margin-bottom:
-    16px;
-
-}
-
-
 .panel {
 
   padding:
@@ -687,13 +663,24 @@ select:focus {
 }
 
 
-.chart-wrap {
+.flight-panel {
+
+  display:
+    none;
+
+  margin-bottom:
+    16px;
+
+}
+
+
+.flight-chart-wrap {
 
   position:
     relative;
 
   height:
-    390px;
+    360px;
 
   margin-top:
     15px;
@@ -701,10 +688,16 @@ select:focus {
 }
 
 
-.taxi-panel {
+.taxi-grid {
 
   display:
     none;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap:
+    16px;
 
   margin-bottom:
     16px;
@@ -718,7 +711,7 @@ select:focus {
     relative;
 
   height:
-    360px;
+    390px;
 
   margin-top:
     15px;
@@ -772,7 +765,7 @@ select:focus {
 .table-scroll {
 
   max-height:
-    670px;
+    680px;
 
   overflow:
     auto;
@@ -805,14 +798,14 @@ th {
   z-index:
     4;
 
+  padding:
+    15px 10px;
+
   background:
     #101e33;
 
   color:
     #a2b2c6;
-
-  padding:
-    15px 11px;
 
   font-size:
     13px;
@@ -820,13 +813,16 @@ th {
   text-align:
     center;
 
+  white-space:
+    nowrap;
+
 }
 
 
 td {
 
   padding:
-    15px 11px;
+    15px 10px;
 
   text-align:
     center;
@@ -840,6 +836,9 @@ td {
 
   font-size:
     14px;
+
+  white-space:
+    nowrap;
 
 }
 
@@ -867,6 +866,26 @@ tbody tr:hover {
 
   color:
     #65778d;
+
+}
+
+
+/* =========================================================
+   MONTHLY TAXI TABLE GROUP COLORS
+========================================================= */
+
+.dep-head {
+
+  color:
+    #86b2ff;
+
+}
+
+
+.arr-head {
+
+  color:
+    #73e4bc;
 
 }
 
@@ -903,9 +922,7 @@ tbody tr:hover {
    RESPONSIVE
 ========================================================= */
 
-@media(
-  max-width:1200px
-) {
+@media(max-width:1200px) {
 
   .kpi-grid {
 
@@ -939,9 +956,7 @@ tbody tr:hover {
 }
 
 
-@media(
-  max-width:800px
-) {
+@media(max-width:850px) {
 
   .app {
 
@@ -953,7 +968,7 @@ tbody tr:hover {
   }
 
 
-  .chart-grid {
+  .search-grid {
 
     grid-template-columns:
       1fr;
@@ -972,7 +987,7 @@ tbody tr:hover {
   }
 
 
-  .search-grid {
+  .taxi-grid {
 
     grid-template-columns:
       1fr;
@@ -980,11 +995,11 @@ tbody tr:hover {
   }
 
 
-  .chart-wrap,
-  .taxi-chart-wrap {
+  .taxi-chart-wrap,
+  .flight-chart-wrap {
 
     height:
-      330px;
+      340px;
 
   }
 
@@ -1040,7 +1055,7 @@ tbody tr:hover {
 
 
   <div class="hero-description">
-    Flight time, taxi and fuel performance analysis
+    Flight time and taxi performance analysis
   </div>
 
 
@@ -1143,10 +1158,6 @@ tbody tr:hover {
 
 
 
-<!-- =======================================================
-     LOADING
-======================================================= -->
-
 <div
   id="loading"
   class="loading"
@@ -1168,15 +1179,13 @@ tbody tr:hover {
   <div
     id="routeName"
     class="route-name"
-  >
-  </div>
+  ></div>
 
 
   <div
     id="routeMeta"
     class="route-meta"
-  >
-  </div>
+  ></div>
 
 </div>
 
@@ -1228,8 +1237,7 @@ tbody tr:hover {
     <div
       id="kpiFlightSub"
       class="kpi-sub"
-    >
-    </div>
+    ></div>
 
   </div>
 
@@ -1250,8 +1258,7 @@ tbody tr:hover {
     <div
       id="kpiBlockSub"
       class="kpi-sub"
-    >
-    </div>
+    ></div>
 
   </div>
 
@@ -1272,8 +1279,7 @@ tbody tr:hover {
     <div
       id="kpiDepTaxiSub"
       class="kpi-sub"
-    >
-    </div>
+    ></div>
 
   </div>
 
@@ -1294,30 +1300,7 @@ tbody tr:hover {
     <div
       id="kpiArrTaxiSub"
       class="kpi-sub"
-    >
-    </div>
-
-  </div>
-
-
-  <div class="kpi">
-
-    <div class="kpi-label">
-      AVG FUEL BURN
-    </div>
-
-    <div
-      id="kpiFuel"
-      class="kpi-value"
-    >
-      -
-    </div>
-
-    <div
-      id="kpiFuelSub"
-      class="kpi-sub"
-    >
-    </div>
+    ></div>
 
   </div>
 
@@ -1326,85 +1309,27 @@ tbody tr:hover {
 
 
 <!-- =======================================================
-     MONTHLY FLIGHT / FUEL
+     MONTHLY FLIGHT TIME
 ======================================================= -->
 
 <div
-  id="chartGrid"
-  class="chart-grid"
->
-
-
-  <div class="panel">
-
-    <div class="panel-title">
-      Monthly Flight Time
-    </div>
-
-    <div class="panel-sub">
-      Historical average by calendar month
-    </div>
-
-
-    <div class="chart-wrap">
-
-      <canvas
-        id="flightChart"
-      ></canvas>
-
-    </div>
-
-  </div>
-
-
-
-  <div class="panel">
-
-    <div class="panel-title">
-      Monthly Fuel Burn
-    </div>
-
-    <div class="panel-sub">
-      Historical average by calendar month
-    </div>
-
-
-    <div class="chart-wrap">
-
-      <canvas
-        id="fuelChart"
-      ></canvas>
-
-    </div>
-
-  </div>
-
-</div>
-
-
-
-<!-- =======================================================
-     TAXI
-======================================================= -->
-
-<div
-  id="taxiPanel"
-  class="panel taxi-panel"
+  id="flightPanel"
+  class="panel flight-panel"
 >
 
   <div class="panel-title">
-    Monthly Taxi Time
+    Monthly Flight Time
   </div>
 
   <div class="panel-sub">
-    Historical departure and arrival taxi averages by calendar month
+    Historical average by calendar month · outliers excluded
   </div>
 
 
-  <div class="taxi-chart-wrap">
+  <div class="flight-chart-wrap">
 
     <canvas
-      id="taxiChart"
+      id="flightChart"
     ></canvas>
 
   </div>
@@ -1414,7 +1339,69 @@ tbody tr:hover {
 
 
 <!-- =======================================================
-     MONTHLY TABLE
+     TAXI CHARTS
+======================================================= -->
+
+<div
+  id="taxiGrid"
+  class="taxi-grid"
+>
+
+
+  <!-- DEP -->
+
+  <div class="panel">
+
+    <div class="panel-title">
+      Monthly DEP Taxi
+    </div>
+
+    <div class="panel-sub">
+      Monthly MIN / AVG / MAX after outlier removal
+    </div>
+
+
+    <div class="taxi-chart-wrap">
+
+      <canvas
+        id="depTaxiChart"
+      ></canvas>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- ARR -->
+
+  <div class="panel">
+
+    <div class="panel-title">
+      Monthly ARR Taxi
+    </div>
+
+    <div class="panel-sub">
+      Monthly MIN / AVG / MAX after outlier removal
+    </div>
+
+
+    <div class="taxi-chart-wrap">
+
+      <canvas
+        id="arrTaxiChart"
+      ></canvas>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     MONTHLY PERFORMANCE
 ======================================================= -->
 
 <div
@@ -1426,8 +1413,9 @@ tbody tr:hover {
     Monthly Performance
   </div>
 
+
   <div class="panel-sub">
-    Outlier-adjusted historical averages by calendar month
+    Calendar-month historical averages · Taxi outliers removed per month
   </div>
 
 
@@ -1443,17 +1431,33 @@ tbody tr:hover {
 
           <th>FLIGHTS</th>
 
-          <th>USED FLT</th>
-
           <th>AVG FLT TIME</th>
 
           <th>AVG BLOCK</th>
 
-          <th>DEP TAXI</th>
+          <th class="dep-head">
+            DEP MIN
+          </th>
 
-          <th>ARR TAXI</th>
+          <th class="dep-head">
+            DEP AVG
+          </th>
 
-          <th>AVG FUEL BURN</th>
+          <th class="dep-head">
+            DEP MAX
+          </th>
+
+          <th class="arr-head">
+            ARR MIN
+          </th>
+
+          <th class="arr-head">
+            ARR AVG
+          </th>
+
+          <th class="arr-head">
+            ARR MAX
+          </th>
 
         </tr>
 
@@ -1462,8 +1466,7 @@ tbody tr:hover {
 
       <tbody
         id="monthlyBody"
-      >
-      </tbody>
+      ></tbody>
 
     </table>
 
@@ -1474,7 +1477,7 @@ tbody tr:hover {
 
 
 <!-- =======================================================
-     FLIGHT HISTORY
+     HISTORY
 ======================================================= -->
 
 <div
@@ -1491,7 +1494,7 @@ tbody tr:hover {
       </div>
 
       <div class="panel-sub">
-        Individual historical records
+        Individual historical route records
       </div>
 
     </div>
@@ -1500,8 +1503,7 @@ tbody tr:hover {
     <div
       id="recordCount"
       class="record-count"
-    >
-    </div>
+    ></div>
 
   </div>
 
@@ -1532,8 +1534,6 @@ tbody tr:hover {
 
           <th>RAMP OUT FUEL</th>
 
-          <th>FUEL BURN</th>
-
           <th>FOD</th>
 
         </tr>
@@ -1543,8 +1543,7 @@ tbody tr:hover {
 
       <tbody
         id="historyBody"
-      >
-      </tbody>
+      ></tbody>
 
     </table>
 
@@ -1609,11 +1608,11 @@ let flightChart =
   null;
 
 
-let fuelChart =
+let depTaxiChart =
   null;
 
 
-let taxiChart =
+let arrTaxiChart =
   null;
 
 
@@ -1659,14 +1658,11 @@ function setupInputs() {
 
           el.value =
             el.value
-
               .toUpperCase()
-
               .replace(
                 /[^A-Z0-9]/g,
                 ''
               )
-
               .slice(
                 0,
                 4
@@ -1750,7 +1746,7 @@ function jsonp(
         setTimeout(
           () => {
 
-            clean();
+            cleanup();
 
             reject(
               new Error(
@@ -1763,7 +1759,7 @@ function jsonp(
         );
 
 
-      function clean() {
+      function cleanup() {
 
         clearTimeout(
           timer
@@ -1791,7 +1787,7 @@ function jsonp(
       ] =
         data => {
 
-          clean();
+          cleanup();
 
           resolve(
             data
@@ -1803,7 +1799,7 @@ function jsonp(
       script.onerror =
         () => {
 
-          clean();
+          cleanup();
 
           reject(
             new Error(
@@ -1826,7 +1822,7 @@ function jsonp(
 
 
 /* =========================================================
-   LOAD TAIL
+   TAIL
 ========================================================= */
 
 async function loadTailOptions() {
@@ -1862,30 +1858,30 @@ async function loadTailOptions() {
       data.tails ||
       []
     )
-    .forEach(
-      tail => {
+      .forEach(
+        tail => {
 
-        const option =
-          document
-            .createElement(
-              'option'
-            );
-
-
-        option.value =
-          tail;
+          const option =
+            document
+              .createElement(
+                'option'
+              );
 
 
-        option.textContent =
-          tail;
+          option.value =
+            tail;
 
 
-        select.appendChild(
-          option
-        );
+          option.textContent =
+            tail;
 
-      }
-    );
+
+          select.appendChild(
+            option
+          );
+
+        }
+      );
 
 
   } catch(err) {
@@ -2037,7 +2033,7 @@ async function searchRoute() {
 
 
 /* =========================================================
-   RENDER ALL
+   RENDER
 ========================================================= */
 
 function renderAll(
@@ -2102,9 +2098,7 @@ function renderAll(
     data.filters &&
     data.filters.tail !==
       'ALL'
-
       ? data.filters.tail
-
       : 'ALL TAIL';
 
 
@@ -2127,13 +2121,15 @@ function renderAll(
   );
 
 
-  renderFuelChart(
-    monthly
+  renderTaxiChart(
+    monthly,
+    'DEP'
   );
 
 
   renderTaxiChart(
-    monthly
+    monthly,
+    'ARR'
   );
 
 
@@ -2234,29 +2230,11 @@ function renderKPI(
 
   );
 
-
-  setText(
-    'kpiFuel',
-    number(
-      summary.avgFuelBurn
-    )
-  );
-
-
-  setText(
-
-    'kpiFuelSub',
-
-    `${summary.fuelSamples || 0} used · ` +
-    `${summary.fuelOutliers || 0} excluded`
-
-  );
-
 }
 
 
 /* =========================================================
-   MONTHLY FLIGHT TIME
+   MONTHLY FLIGHT CHART
 ========================================================= */
 
 function renderFlightChart(
@@ -2360,13 +2338,7 @@ function renderFlightChart(
             padding: {
 
               top:
-                32,
-
-              left:
-                5,
-
-              right:
-                5
+                30
 
             }
 
@@ -2384,12 +2356,14 @@ function renderFlightChart(
             datalabels: {
 
               display:
-                ctx => {
+                context => {
 
                   const value =
-                    ctx.dataset.data[
-                      ctx.dataIndex
-                    ];
+                    context
+                      .dataset
+                      .data[
+                        context.dataIndex
+                      ];
 
 
                   return value !== null &&
@@ -2409,9 +2383,6 @@ function renderFlightChart(
 
               offset:
                 5,
-
-              clamp:
-                true,
 
               font: {
 
@@ -2435,41 +2406,26 @@ function renderFlightChart(
 
             tooltip: {
 
-              backgroundColor:
-                '#101e33',
-
               callbacks: {
 
-                title:
-                  items =>
-                    items[0]
-                      .label,
-
-
                 label:
-                  ctx => {
+                  context => {
 
                     const row =
                       rows[
-                        ctx.dataIndex
+                        context.dataIndex
                       ];
 
 
                     return [
 
-                      'Avg Flight Time: ' +
+                      'Avg Flight: ' +
                       minToHHMM(
-                        ctx.raw
+                        context.raw
                       ),
 
                       'Flights: ' +
-                      row.flights,
-
-                      'Used: ' +
-                      row.flightSamples,
-
-                      'Excluded: ' +
-                      row.flightOutliers
+                      row.flights
 
                     ];
 
@@ -2527,288 +2483,17 @@ function renderFlightChart(
               },
 
               ticks: {
-
-                font: {
-                  size:
-                    13
-                },
 
                 callback:
                   value =>
                     minToHHMM(
                       value
-                    )
-
-              }
-
-            }
-
-          }
-
-        }
-
-      }
-    );
-
-}
-
-
-/* =========================================================
-   MONTHLY FUEL
-========================================================= */
-
-function renderFuelChart(
-  rows
-) {
-
-  if (
-    fuelChart
-  ) {
-
-    fuelChart.destroy();
-
-  }
-
-
-  fuelChart =
-    new Chart(
-      document
-        .getElementById(
-          'fuelChart'
-        ),
-      {
-
-        type:
-          'bar',
-
-
-        data: {
-
-          labels:
-            rows.map(
-              row =>
-                row.label
-            ),
-
-
-          datasets: [
-
-            {
-
-              label:
-                'Fuel Burn',
-
-              data:
-                rows.map(
-                  row =>
-                    row.avgFuelBurn
-                ),
-
-              backgroundColor:
-                'rgba(245,182,66,.77)',
-
-              borderColor:
-                '#f5b642',
-
-              borderWidth:
-                1.5,
-
-              borderRadius:
-                8,
-
-              maxBarThickness:
-                55
-
-            }
-
-          ]
-
-        },
-
-
-        options: {
-
-          responsive:
-            true,
-
-          maintainAspectRatio:
-            false,
-
-
-          layout: {
-
-            padding: {
-
-              top:
-                32
-
-            }
-
-          },
-
-
-          plugins: {
-
-            legend: {
-              display:
-                false
-            },
-
-
-            datalabels: {
-
-              display:
-                ctx => {
-
-                  const value =
-                    ctx.dataset.data[
-                      ctx.dataIndex
-                    ];
-
-
-                  return value !== null &&
-                    value !== undefined;
-
-                },
-
-
-              color:
-                '#ffd786',
-
-              anchor:
-                'end',
-
-              align:
-                'end',
-
-              offset:
-                4,
-
-              clamp:
-                true,
-
-              font: {
-
-                size:
-                  13,
-
-                weight:
-                  '700'
-
-              },
-
-
-              formatter:
-                value =>
-                  number(
-                    value
-                  )
-
-            },
-
-
-            tooltip: {
-
-              backgroundColor:
-                '#101e33',
-
-              callbacks: {
-
-                label:
-                  ctx => {
-
-                    const row =
-                      rows[
-                        ctx.dataIndex
-                      ];
-
-
-                    return [
-
-                      'Avg Fuel Burn: ' +
-                      number(
-                        ctx.raw
-                      ),
-
-                      'Flights: ' +
-                      row.flights,
-
-                      'Used: ' +
-                      row.fuelSamples,
-
-                      'Excluded: ' +
-                      row.fuelOutliers
-
-                    ];
-
-                  }
-
-              }
-
-            }
-
-          },
-
-
-          scales: {
-
-            x: {
-
-              grid: {
-                display:
-                  false
-              },
-
-              ticks: {
-
-                autoSkip:
-                  false,
-
-                maxRotation:
-                  0,
-
-                minRotation:
-                  0,
-
-                font: {
-
-                  size:
-                    13,
-
-                  weight:
-                    '600'
-
-                }
-
-              }
-
-            },
-
-
-            y: {
-
-              beginAtZero:
-                false,
-
-              grid: {
-
-                color:
-                  'rgba(255,255,255,.05)'
-
-              },
-
-              ticks: {
+                    ),
 
                 font: {
                   size:
                     13
-                },
-
-                callback:
-                  value =>
-                    number(
-                      value
-                    )
+                }
 
               }
 
@@ -2825,27 +2510,80 @@ function renderFuelChart(
 
 
 /* =========================================================
-   MONTHLY TAXI
+   TAXI CHART
 ========================================================= */
 
 function renderTaxiChart(
-  rows
+  rows,
+  mode
 ) {
 
-  if (
-    taxiChart
-  ) {
+  const isDep =
+    mode ===
+    'DEP';
 
-    taxiChart.destroy();
+
+  const canvasId =
+    isDep
+      ? 'depTaxiChart'
+      : 'arrTaxiChart';
+
+
+  if (isDep) {
+
+    if (
+      depTaxiChart
+    ) {
+
+      depTaxiChart.destroy();
+
+    }
+
+  } else {
+
+    if (
+      arrTaxiChart
+    ) {
+
+      arrTaxiChart.destroy();
+
+    }
 
   }
 
 
-  taxiChart =
+  const minData =
+    rows.map(
+      row =>
+        isDep
+          ? row.depTaxiMin
+          : row.arrTaxiMin
+    );
+
+
+  const avgData =
+    rows.map(
+      row =>
+        isDep
+          ? row.avgDepTaxi
+          : row.avgArrTaxi
+    );
+
+
+  const maxData =
+    rows.map(
+      row =>
+        isDep
+          ? row.depTaxiMax
+          : row.arrTaxiMax
+    );
+
+
+  const chart =
     new Chart(
       document
         .getElementById(
-          'taxiChart'
+          canvasId
         ),
       {
 
@@ -2867,16 +2605,39 @@ function renderTaxiChart(
             {
 
               label:
-                'DEP Taxi',
+                'MIN',
 
               data:
-                rows.map(
-                  row =>
-                    row.avgDepTaxi
-                ),
+                minData,
 
               backgroundColor:
-                'rgba(77,140,255,.78)',
+                'rgba(65,211,152,.68)',
+
+              borderColor:
+                '#41d398',
+
+              borderWidth:
+                1.3,
+
+              borderRadius:
+                5,
+
+              maxBarThickness:
+                30
+
+            },
+
+
+            {
+
+              label:
+                'AVG',
+
+              data:
+                avgData,
+
+              backgroundColor:
+                'rgba(77,140,255,.85)',
 
               borderColor:
                 '#4d8cff',
@@ -2885,10 +2646,10 @@ function renderTaxiChart(
                 1.5,
 
               borderRadius:
-                7,
+                5,
 
               maxBarThickness:
-                40
+                30
 
             },
 
@@ -2896,28 +2657,25 @@ function renderTaxiChart(
             {
 
               label:
-                'ARR Taxi',
+                'MAX',
 
               data:
-                rows.map(
-                  row =>
-                    row.avgArrTaxi
-                ),
+                maxData,
 
               backgroundColor:
-                'rgba(65,211,152,.78)',
+                'rgba(169,135,255,.72)',
 
               borderColor:
-                '#41d398',
+                '#a987ff',
 
               borderWidth:
-                1.5,
+                1.3,
 
               borderRadius:
-                7,
+                5,
 
               maxBarThickness:
-                40
+                30
 
             }
 
@@ -2960,7 +2718,7 @@ function renderTaxiChart(
                   'rectRounded',
 
                 padding:
-                  20,
+                  18,
 
                 font: {
 
@@ -2980,12 +2738,14 @@ function renderTaxiChart(
             datalabels: {
 
               display:
-                ctx => {
+                context => {
 
                   const value =
-                    ctx.dataset.data[
-                      ctx.dataIndex
-                    ];
+                    context
+                      .dataset
+                      .data[
+                        context.dataIndex
+                      ];
 
 
                   return value !== null &&
@@ -2995,7 +2755,7 @@ function renderTaxiChart(
 
 
               color:
-                '#e7eef8',
+                '#e8eef8',
 
               anchor:
                 'end',
@@ -3004,15 +2764,12 @@ function renderTaxiChart(
                 'end',
 
               offset:
-                3,
-
-              clamp:
-                true,
+                2,
 
               font: {
 
                 size:
-                  12,
+                  11,
 
                 weight:
                   '700'
@@ -3031,51 +2788,58 @@ function renderTaxiChart(
 
             tooltip: {
 
-              backgroundColor:
-                '#101e33',
-
               callbacks: {
 
-                label:
-                  ctx => {
+                afterBody:
+                  items => {
+
+                    if (
+                      !items.length
+                    ) {
+
+                      return [];
+
+                    }
+
+
+                    const index =
+                      items[0]
+                        .dataIndex;
+
 
                     const row =
                       rows[
-                        ctx.dataIndex
+                        index
                       ];
 
 
-                    const isDep =
-                      ctx.datasetIndex === 0;
+                    const used =
+                      isDep
+                        ? row.depTaxiSamples
+                        : row.arrTaxiSamples;
+
+
+                    const excluded =
+                      isDep
+                        ? row.depTaxiOutliers
+                        : row.arrTaxiOutliers;
+
+
+                    const total =
+                      isDep
+                        ? row.depTaxiTotal
+                        : row.arrTaxiTotal;
 
 
                     return [
 
-                      (
-                        isDep
-                          ? 'DEP Taxi: '
-                          : 'ARR Taxi: '
-                      ) +
-                      minute(
-                        ctx.raw
-                      ),
+                      '',
 
-                      'Flights: ' +
-                      row.flights,
+                      `Total: ${total}`,
 
-                      'Used: ' +
-                      (
-                        isDep
-                          ? row.depTaxiSamples
-                          : row.arrTaxiSamples
-                      ),
+                      `Used: ${used}`,
 
-                      'Excluded: ' +
-                      (
-                        isDep
-                          ? row.depTaxiOutliers
-                          : row.arrTaxiOutliers
-                      )
+                      `Excluded: ${excluded}`
 
                     ];
 
@@ -3111,7 +2875,7 @@ function renderTaxiChart(
                 font: {
 
                   size:
-                    13,
+                    12,
 
                   weight:
                     '600'
@@ -3137,15 +2901,15 @@ function renderTaxiChart(
 
               ticks: {
 
-                font: {
-                  size:
-                    13
-                },
-
                 callback:
                   value =>
                     value +
-                    'm'
+                    'm',
+
+                font: {
+                  size:
+                    13
+                }
 
               }
 
@@ -3157,6 +2921,19 @@ function renderTaxiChart(
 
       }
     );
+
+
+  if (isDep) {
+
+    depTaxiChart =
+      chart;
+
+  } else {
+
+    arrTaxiChart =
+      chart;
+
+  }
 
 }
 
@@ -3206,11 +2983,6 @@ function renderMonthlyTable(
         </td>
 
 
-        <td class="${noData ? 'no-data' : ''}">
-          ${row.flightSamples || 0}
-        </td>
-
-
         <td>
           ${escapeHtml(row.avgFlightTime || '-')}
         </td>
@@ -3222,7 +2994,22 @@ function renderMonthlyTable(
 
 
         <td>
+          ${minute(row.depTaxiMin)}
+        </td>
+
+
+        <td>
           ${minute(row.avgDepTaxi)}
+        </td>
+
+
+        <td>
+          ${minute(row.depTaxiMax)}
+        </td>
+
+
+        <td>
+          ${minute(row.arrTaxiMin)}
         </td>
 
 
@@ -3232,7 +3019,7 @@ function renderMonthlyTable(
 
 
         <td>
-          ${number(row.avgFuelBurn)}
+          ${minute(row.arrTaxiMax)}
         </td>
 
       `;
@@ -3333,11 +3120,6 @@ function renderHistory(
           </td>
 
 
-          <td class="${row.fuelBurnOutlier ? 'outlier' : ''}">
-            ${number(row.fuelBurn)}
-          </td>
-
-
           <td>
             ${number(row.fod)}
           </td>
@@ -3356,7 +3138,7 @@ function renderHistory(
 
 
 /* =========================================================
-   DISPLAY
+   SHOW / HIDE
 ========================================================= */
 
 function showResults() {
@@ -3379,18 +3161,18 @@ function showResults() {
 
   document
     .getElementById(
-      'chartGrid'
+      'flightPanel'
     )
     .style.display =
-      'grid';
+      'block';
 
 
   document
     .getElementById(
-      'taxiPanel'
+      'taxiGrid'
     )
     .style.display =
-      'block';
+      'grid';
 
 
   document
@@ -3419,27 +3201,27 @@ function hideResults() {
 
     'kpiGrid',
 
-    'chartGrid',
+    'flightPanel',
 
-    'taxiPanel',
+    'taxiGrid',
 
     'monthlyPanel',
 
     'historyPanel'
 
   ]
-  .forEach(
-    id => {
+    .forEach(
+      id => {
 
-      document
-        .getElementById(
-          id
-        )
-        .style.display =
-          'none';
+        document
+          .getElementById(
+            id
+          )
+          .style.display =
+            'none';
 
-    }
-  );
+      }
+    );
 
 }
 
@@ -3481,10 +3263,13 @@ function setLoading(
 
 
   setText(
+
     'statusText',
+
     value
       ? 'Analyzing...'
       : 'System Ready'
+
   );
 
 
@@ -3569,10 +3354,8 @@ function number(
     .toLocaleString(
       'en-US',
       {
-
         maximumFractionDigits:
           0
-
       }
     );
 
