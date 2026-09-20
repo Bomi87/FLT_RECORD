@@ -3796,6 +3796,11 @@ function renderFlightChart(
   history
 ) {
 
+  const isMobile =
+    window.matchMedia(
+      '(max-width: 850px)'
+    ).matches;
+
   if (
     flightChart
   ) {
