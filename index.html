@@ -4266,18 +4266,131 @@ function renderFlightChart(
                 false,
 
               /*
-               * Each segment takes the color of the month it enters.
-               * This makes MAR–MAY / JUN–AUG / SEP–NOV / DEC–FEB
-               * visually distinct while keeping one continuous chart.
+               * Seasonal line coloring:
+               *
+               * - Same-season segment:
+               *     use one season color for the whole segment.
+               *
+               * - Season-boundary segment:
+               *     split the line exactly at the visual midpoint.
+               *     First half  = previous month's season color.
+               *     Second half = next month's season color.
+               *
+               * Examples:
+               *   FEB -> MAR : blue  | green
+               *   MAY -> JUN : green | yellow
+               *   AUG -> SEP : yellow| orange
+               *   NOV -> DEC : orange| blue
                */
               segment: {
 
                 borderColor:
-                  context =>
-                    flightSeasonStyleByIndex(
-                      rows,
-                      context.p1DataIndex
-                    ).line
+                  context => {
+
+                    const fromStyle =
+                      flightSeasonStyleByIndex(
+                        rows,
+                        context.p0DataIndex
+                      );
+
+
+                    const toStyle =
+                      flightSeasonStyleByIndex(
+                        rows,
+                        context.p1DataIndex
+                      );
+
+
+                    if (
+                      !fromStyle ||
+                      !toStyle
+                    ) {
+
+                      return '#72B4F2';
+
+                    }
+
+
+                    if (
+                      fromStyle.line ===
+                      toStyle.line
+                    ) {
+
+                      return fromStyle.line;
+
+                    }
+
+
+                    /*
+                     * Build a hard two-color gradient along the actual
+                     * rendered segment, changing color at 50%.
+                     * The very small gap between .499 and .501 avoids
+                     * anti-aliased blending across a wide area.
+                     */
+                    const chart =
+                      context.chart;
+
+
+                    const p0 =
+                      context.p0;
+
+
+                    const p1 =
+                      context.p1;
+
+
+                    if (
+                      !chart ||
+                      !chart.ctx ||
+                      !p0 ||
+                      !p1 ||
+                      !Number.isFinite(p0.x) ||
+                      !Number.isFinite(p0.y) ||
+                      !Number.isFinite(p1.x) ||
+                      !Number.isFinite(p1.y)
+                    ) {
+
+                      return toStyle.line;
+
+                    }
+
+
+                    const gradient =
+                      chart.ctx.createLinearGradient(
+                        p0.x,
+                        p0.y,
+                        p1.x,
+                        p1.y
+                      );
+
+
+                    gradient.addColorStop(
+                      0,
+                      fromStyle.line
+                    );
+
+
+                    gradient.addColorStop(
+                      .499,
+                      fromStyle.line
+                    );
+
+
+                    gradient.addColorStop(
+                      .501,
+                      toStyle.line
+                    );
+
+
+                    gradient.addColorStop(
+                      1,
+                      toStyle.line
+                    );
+
+
+                    return gradient;
+
+                  }
 
               }
 
