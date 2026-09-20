@@ -1130,7 +1130,7 @@ td {
   </div>
 
   <div class="panel-sub">
-    AVG FLT TIME + AVG DEP TAXI + AVG ARR TAXI · taxi outliers excluded
+    AVG FLT TIME + AVG DEP & ARR TAXI
   </div>
 
 
@@ -1163,7 +1163,7 @@ td {
     </div>
 
     <div class="panel-sub">
-      3-minute taxi groups · AVG = most frequent range · outliers excluded
+      AVG = most frequent range
     </div>
 
     <div class="taxi-legend">
@@ -1175,7 +1175,7 @@ td {
 
       <div class="taxi-legend-item">
         <span class="taxi-color taxi-color-avg"></span>
-        AVG / TYPICAL
+        AVG
       </div>
 
       <div class="taxi-legend-item">
@@ -1192,64 +1192,6 @@ td {
   </div>
 
 </div>
-
-
-<!-- =======================================================
-     MONTHLY PERFORMANCE
-======================================================= -->
-
-<div
-  id="monthlyPanel"
-  class="panel table-panel monthly-panel-style"
->
-
-  <div class="section-title-row">
-
-    <div class="panel-title">
-      Monthly Performance
-    </div>
-
-    <div class="section-badge">
-      MONTHLY SUMMARY
-    </div>
-
-  </div>
-
-
-  <div class="panel-sub">
-    Calendar-month Flight Time / Block Time performance
-  </div>
-
-
-  <div class="table-scroll">
-
-    <table>
-
-      <thead>
-
-        <tr>
-
-          <th>MONTH</th>
-
-          <th>FLIGHTS</th>
-
-          <th>AVG FLT TIME</th>
-
-          <th>AVG BLOCK</th>
-
-        </tr>
-
-      </thead>
-
-
-      <tbody id="monthlyBody"></tbody>
-
-    </table>
-
-  </div>
-
-</div>
-
 
 
 <!-- =======================================================
@@ -2373,11 +2315,6 @@ function renderAll(
   );
 
 
-  renderMonthlyTable(
-    monthly
-  );
-
-
   renderHistory(
     history
   );
@@ -3349,7 +3286,7 @@ function renderTaxiSummaryChart(
             {
 
               label:
-                'AVG / TYPICAL',
+                'AVG',
 
               data: [
                 groupBarValue(depStats.typical),
@@ -3550,7 +3487,7 @@ function renderTaxiSummaryChart(
 
 
                     const prefix =
-                      context.dataset.label === 'AVG / TYPICAL'
+                      context.dataset.label === 'AVG'
                         ? 'Most common range'
                         : context.dataset.label + ' range';
 
@@ -3819,71 +3756,6 @@ function taxiGroupedStats(
 
 
 /* =========================================================
-   MONTHLY TABLE
-========================================================= */
-
-function renderMonthlyTable(
-  rows
-) {
-
-  const tbody =
-    document
-      .getElementById(
-        'monthlyBody'
-      );
-
-
-  tbody.innerHTML =
-    '';
-
-
-  rows.forEach(
-    row => {
-
-      const tr =
-        document
-          .createElement(
-            'tr'
-          );
-
-
-      const noData =
-        row.flights ===
-        0;
-
-
-      tr.innerHTML = `
-
-        <td>
-          ${escapeHtml(row.label)}
-        </td>
-
-        <td class="${noData ? 'no-data' : ''}">
-          ${number(row.flights)}
-        </td>
-
-        <td>
-          ${escapeHtml(row.avgFlightTime || '-')}
-        </td>
-
-        <td>
-          ${escapeHtml(row.avgBlockTime || '-')}
-        </td>
-
-      `;
-
-
-      tbody.appendChild(
-        tr
-      );
-
-    }
-  );
-
-}
-
-
-/* =========================================================
    HISTORY
 ========================================================= */
 
@@ -4016,14 +3888,6 @@ function showResults() {
 
   document
     .getElementById(
-      'monthlyPanel'
-    )
-    .style.display =
-      'block';
-
-
-  document
-    .getElementById(
       'historyPanel'
     )
     .style.display =
@@ -4043,8 +3907,6 @@ function hideResults() {
     'flightPanel',
 
     'taxiGrid',
-
-    'monthlyPanel',
 
     'historyPanel'
 
