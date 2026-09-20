@@ -440,7 +440,7 @@ select:focus {
   display: none;
 
   grid-template-columns:
-    1fr 1fr;
+    1fr;
 
   gap: 16px;
 
@@ -1126,11 +1126,11 @@ td {
 >
 
   <div class="panel-title">
-    Monthly Flight Time
+    Monthly Block Time
   </div>
 
   <div class="panel-sub">
-    Historical average by calendar month · outliers excluded
+    AVG FLT TIME + AVG DEP TAXI + AVG ARR TAXI · taxi outliers excluded
   </div>
 
 
@@ -1145,7 +1145,7 @@ td {
 
 
 <!-- =======================================================
-     TAXI
+     TAXI SUMMARY
 ======================================================= -->
 
 <div
@@ -1153,20 +1153,18 @@ td {
   class="taxi-grid"
 >
 
-
   <div class="panel">
 
     <div
-      id="depTaxiTitle"
+      id="taxiSummaryTitle"
       class="panel-title"
     >
-      Monthly DEP Taxi
+      Taxi Time Summary
     </div>
 
     <div class="panel-sub">
-      Monthly MIN / AVG / MAX after outlier removal
+      Overall DEP / ARR taxi comparison · outliers excluded
     </div>
-
 
     <div class="taxi-legend">
 
@@ -1187,61 +1185,13 @@ td {
 
     </div>
 
-
     <div class="taxi-chart-wrap">
-
-      <canvas id="depTaxiChart"></canvas>
-
-    </div>
-
-  </div>
-
-
-
-  <div class="panel">
-
-    <div
-      id="arrTaxiTitle"
-      class="panel-title"
-    >
-      Monthly ARR Taxi
-    </div>
-
-    <div class="panel-sub">
-      Monthly MIN / AVG / MAX after outlier removal
-    </div>
-
-
-    <div class="taxi-legend">
-
-      <div class="taxi-legend-item">
-        <span class="taxi-color taxi-color-min"></span>
-        MIN
-      </div>
-
-      <div class="taxi-legend-item">
-        <span class="taxi-color taxi-color-avg"></span>
-        AVG
-      </div>
-
-      <div class="taxi-legend-item">
-        <span class="taxi-color taxi-color-max"></span>
-        MAX
-      </div>
-
-    </div>
-
-
-    <div class="taxi-chart-wrap">
-
-      <canvas id="arrTaxiChart"></canvas>
-
+      <canvas id="taxiSummaryChart"></canvas>
     </div>
 
   </div>
 
 </div>
-
 
 
 <!-- =======================================================
@@ -1267,7 +1217,7 @@ td {
 
 
   <div class="panel-sub">
-    Calendar-month performance · Taxi outliers removed per month
+    Calendar-month Flight Time / Block Time performance
   </div>
 
 
@@ -1286,30 +1236,6 @@ td {
           <th>AVG FLT TIME</th>
 
           <th>AVG BLOCK</th>
-
-          <th class="dep-head">
-            DEP MIN
-          </th>
-
-          <th class="dep-head">
-            DEP AVG
-          </th>
-
-          <th class="dep-head">
-            DEP MAX
-          </th>
-
-          <th class="arr-head">
-            ARR MIN
-          </th>
-
-          <th class="arr-head">
-            ARR AVG
-          </th>
-
-          <th class="arr-head">
-            ARR MAX
-          </th>
 
         </tr>
 
@@ -1465,11 +1391,7 @@ let flightChart =
   null;
 
 
-let depTaxiChart =
-  null;
-
-
-let arrTaxiChart =
+let taxiSummaryChart =
   null;
 
 
@@ -2421,17 +2343,11 @@ function renderAll(
 
 
   /*
-   * Taxi 제목 ICAO 표시
+   * Taxi Summary 제목 ICAO 표시
    */
   setText(
-    'depTaxiTitle',
-    `Monthly DEP Taxi (${dep})`
-  );
-
-
-  setText(
-    'arrTaxiTitle',
-    `Monthly ARR Taxi (${arr})`
+    'taxiSummaryTitle',
+    `Taxi Time Summary (${dep} → ${arr})`
   );
 
 
@@ -2451,15 +2367,8 @@ function renderAll(
   );
 
 
-  renderTaxiRangeChart(
-    monthly,
-    'DEP'
-  );
-
-
-  renderTaxiRangeChart(
-    monthly,
-    'ARR'
+  renderTaxiSummaryChart(
+    history
   );
 
 
@@ -2606,12 +2515,44 @@ function renderFlightChart(
             {
 
               label:
-                'Flight Time',
+                'Block Time',
 
               data:
                 rows.map(
-                  row =>
-                    row.avgFlightMinutes
+                  row => {
+
+                    const flt =
+                      numericOrNull(
+                        row.avgFlightMinutes
+                      );
+
+                    const dep =
+                      numericOrNull(
+                        row.avgDepTaxi
+                      );
+
+                    const arr =
+                      numericOrNull(
+                        row.avgArrTaxi
+                      );
+
+                    if (
+                      flt === null ||
+                      dep === null ||
+                      arr === null
+                    ) {
+
+                      return null;
+
+                    }
+
+                    return (
+                      flt +
+                      dep +
+                      arr
+                    );
+
+                  }
                 ),
 
               borderColor:
@@ -2756,9 +2697,24 @@ function renderFlightChart(
 
                     return [
 
-                      'Avg Flight: ' +
+                      'Avg Block: ' +
                       minToHHMM(
                         context.raw
+                      ),
+
+                      'Avg Flight: ' +
+                      minToHHMM(
+                        row.avgFlightMinutes
+                      ),
+
+                      'Avg DEP Taxi: ' +
+                      minute(
+                        row.avgDepTaxi
+                      ),
+
+                      'Avg ARR Taxi: ' +
+                      minute(
+                        row.avgArrTaxi
                       ),
 
                       'Flights: ' +
@@ -2851,174 +2807,72 @@ function renderFlightChart(
 
 
 /* =========================================================
-   TAXI RANGE CHART
+   TAXI SUMMARY CHART
+
+   전체 운항기록에서 Taxi outlier를 제외한 뒤
+   DEP / ARR 각각의 MIN / AVG / MAX를 한 화면에서 비교.
 ========================================================= */
 
-function renderTaxiRangeChart(
-  rows,
-  mode
+function renderTaxiSummaryChart(
+  rows
 ) {
 
-  const isDep =
-    mode ===
-    'DEP';
+  if (
+    taxiSummaryChart
+  ) {
 
-
-  const canvasId =
-    isDep
-      ? 'depTaxiChart'
-      : 'arrTaxiChart';
-
-
-  if (isDep) {
-
-    if (
-      depTaxiChart
-    ) {
-
-      depTaxiChart.destroy();
-
-    }
-
-  } else {
-
-    if (
-      arrTaxiChart
-    ) {
-
-      arrTaxiChart.destroy();
-
-    }
+    taxiSummaryChart.destroy();
 
   }
 
 
-  const getMin =
-    row =>
-      isDep
-        ? row.depTaxiMin
-        : row.arrTaxiMin;
-
-
-  const getAvg =
-    row =>
-      isDep
-        ? row.avgDepTaxi
-        : row.avgArrTaxi;
-
-
-  const getMax =
-    row =>
-      isDep
-        ? row.depTaxiMax
-        : row.arrTaxiMax;
-
-
-  /*
-   * 0 → MIN
-   */
-  const minData =
-    rows.map(
-      row =>
-        numericOrNull(
-          getMin(
-            row
-          )
+  const depValues =
+    rows
+      .filter(
+        row => !row.depTaxiOutlier
+      )
+      .map(
+        row => numericOrNull(
+          row.depTaxi
         )
+      )
+      .filter(
+        value => value !== null
+      );
+
+
+  const arrValues =
+    rows
+      .filter(
+        row => !row.arrTaxiOutlier
+      )
+      .map(
+        row => numericOrNull(
+          row.arrTaxi
+        )
+      )
+      .filter(
+        value => value !== null
+      );
+
+
+  const depStats =
+    taxiStats(
+      depValues
     );
 
 
-  /*
-   * MIN → AVG
-   */
-  const avgRange =
-    rows.map(
-      row => {
-
-        const min =
-          numericOrNull(
-            getMin(
-              row
-            )
-          );
-
-
-        const avg =
-          numericOrNull(
-            getAvg(
-              row
-            )
-          );
-
-
-        if (
-          min === null ||
-          avg === null
-        ) {
-
-          return null;
-
-        }
-
-
-        return Math.max(
-          0,
-          avg -
-          min
-        );
-
-      }
+  const arrStats =
+    taxiStats(
+      arrValues
     );
 
 
-  /*
-   * AVG → MAX
-   */
-  const maxRange =
-    rows.map(
-      row => {
-
-        const avg =
-          numericOrNull(
-            getAvg(
-              row
-            )
-          );
-
-
-        const max =
-          numericOrNull(
-            getMax(
-              row
-            )
-          );
-
-
-        if (
-          avg === null ||
-          max === null
-        ) {
-
-          return null;
-
-        }
-
-
-        return Math.max(
-          0,
-          max -
-          avg
-        );
-
-      }
-    );
-
-
-  const chart =
+  taxiSummaryChart =
     new Chart(
       document
         .getElementById(
-          canvasId
+          'taxiSummaryChart'
         ),
       {
 
@@ -3028,11 +2882,10 @@ function renderTaxiRangeChart(
 
         data: {
 
-          labels:
-            rows.map(
-              row =>
-                row.label
-            ),
+          labels: [
+            'DEP',
+            'ARR'
+          ],
 
 
           datasets: [
@@ -3042,8 +2895,10 @@ function renderTaxiRangeChart(
               label:
                 'MIN',
 
-              data:
-                minData,
+              data: [
+                depStats.min,
+                arrStats.min
+              ],
 
               backgroundColor:
                 '#6fb7b2',
@@ -3051,32 +2906,16 @@ function renderTaxiRangeChart(
               borderWidth:
                 0,
 
-              borderRadius: {
-
-                topLeft:
-                  0,
-
-                topRight:
-                  0,
-
-                bottomLeft:
-                  5,
-
-                bottomRight:
-                  5
-
-              },
-
-              stack:
-                'taxi',
+              borderRadius:
+                5,
 
               maxBarThickness:
-                14,
-
-              barPercentage:
-                .55,
+                34,
 
               categoryPercentage:
+                .58,
+
+              barPercentage:
                 .72
 
             },
@@ -3087,8 +2926,10 @@ function renderTaxiRangeChart(
               label:
                 'AVG',
 
-              data:
-                avgRange,
+              data: [
+                depStats.avg,
+                arrStats.avg
+              ],
 
               backgroundColor:
                 '#d7a54c',
@@ -3097,18 +2938,15 @@ function renderTaxiRangeChart(
                 0,
 
               borderRadius:
-                0,
-
-              stack:
-                'taxi',
+                5,
 
               maxBarThickness:
-                14,
-
-              barPercentage:
-                .55,
+                34,
 
               categoryPercentage:
+                .58,
+
+              barPercentage:
                 .72
 
             },
@@ -3119,8 +2957,10 @@ function renderTaxiRangeChart(
               label:
                 'MAX',
 
-              data:
-                maxRange,
+              data: [
+                depStats.max,
+                arrStats.max
+              ],
 
               backgroundColor:
                 '#6388c6',
@@ -3128,32 +2968,16 @@ function renderTaxiRangeChart(
               borderWidth:
                 0,
 
-              borderRadius: {
-
-                topLeft:
-                  5,
-
-                topRight:
-                  5,
-
-                bottomLeft:
-                  0,
-
-                bottomRight:
-                  0
-
-              },
-
-              stack:
-                'taxi',
+              borderRadius:
+                5,
 
               maxBarThickness:
-                14,
-
-              barPercentage:
-                .55,
+                34,
 
               categoryPercentage:
+                .58,
+
+              barPercentage:
                 .72
 
             }
@@ -3172,32 +2996,18 @@ function renderTaxiRangeChart(
             false,
 
 
-          interaction: {
-
-            mode:
-              'index',
-
-            intersect:
-              false
-
-          },
-
-
           layout: {
 
-            /*
-             * 오른쪽 숫자 label 공간
-             */
             padding: {
 
               top:
-                15,
-
-              left:
-                5,
+                28,
 
               right:
-                30
+                20,
+
+              left:
+                10
 
             }
 
@@ -3205,18 +3015,6 @@ function renderTaxiRangeChart(
 
 
           plugins: {
-
-            /*
-             * 기본 bar 안의 datalabel은 제거.
-             * 커스텀 plugin이 오른쪽에 출력.
-             */
-            datalabels: {
-
-              display:
-                false
-
-            },
-
 
             legend: {
 
@@ -3226,16 +3024,37 @@ function renderTaxiRangeChart(
             },
 
 
-            taxiBoundaryLabels: {
+            datalabels: {
 
-              enabled:
-                true,
+              color:
+                '#e4edf7',
 
-              rows:
-                rows,
+              anchor:
+                'end',
 
-              mode:
-                mode
+              align:
+                'top',
+
+              offset:
+                4,
+
+              font: {
+
+                size:
+                  13,
+
+                weight:
+                  '700'
+
+              },
+
+              formatter:
+                value =>
+                  value === null
+                    ? ''
+                    : compactMinute(
+                        value
+                      )
 
             },
 
@@ -3254,13 +3073,11 @@ function renderTaxiRangeChart(
               padding:
                 12,
 
-
               callbacks: {
 
                 label:
-                  () =>
-                    null,
-
+                  context =>
+                    `${context.dataset.label}: ${minute(context.raw)}`,
 
                 afterBody:
                   items => {
@@ -3274,53 +3091,31 @@ function renderTaxiRangeChart(
                     }
 
 
-                    const index =
-                      items[0]
-                        .dataIndex;
-
-
-                    const row =
-                      rows[
-                        index
-                      ];
+                    const isDep =
+                      items[0].dataIndex === 0;
 
 
                     const total =
                       isDep
-                        ? row.depTaxiTotal
-                        : row.arrTaxiTotal;
+                        ? rows.filter(
+                            row => numericOrNull(row.depTaxi) !== null
+                          ).length
+                        : rows.filter(
+                            row => numericOrNull(row.arrTaxi) !== null
+                          ).length;
 
 
                     const used =
                       isDep
-                        ? row.depTaxiSamples
-                        : row.arrTaxiSamples;
-
-
-                    const excluded =
-                      isDep
-                        ? row.depTaxiOutliers
-                        : row.arrTaxiOutliers;
+                        ? depValues.length
+                        : arrValues.length;
 
 
                     return [
-
-                      `${mode} Taxi`,
-
-                      `MIN: ${minute(getMin(row))}`,
-
-                      `AVG: ${minute(getAvg(row))}`,
-
-                      `MAX: ${minute(getMax(row))}`,
-
                       '',
-
-                      `Total samples: ${total || 0}`,
-
-                      `Used: ${used || 0}`,
-
-                      `Excluded: ${excluded || 0}`
-
+                      `Total samples: ${total}`,
+                      `Used: ${used}`,
+                      `Excluded: ${Math.max(0, total - used)}`
                     ];
 
                   }
@@ -3336,9 +3131,6 @@ function renderTaxiRangeChart(
 
             x: {
 
-              stacked:
-                true,
-
               grid: {
 
                 display:
@@ -3348,22 +3140,13 @@ function renderTaxiRangeChart(
 
               ticks: {
 
-                autoSkip:
-                  false,
-
-                maxRotation:
-                  0,
-
-                minRotation:
-                  0,
-
                 font: {
 
                   size:
-                    12,
+                    14,
 
                   weight:
-                    '600'
+                    '700'
 
                 }
 
@@ -3373,9 +3156,6 @@ function renderTaxiRangeChart(
 
 
             y: {
-
-              stacked:
-                true,
 
               beginAtZero:
                 true,
@@ -3412,18 +3192,58 @@ function renderTaxiRangeChart(
       }
     );
 
+}
 
-  if (isDep) {
 
-    depTaxiChart =
-      chart;
+function taxiStats(
+  values
+) {
 
-  } else {
+  if (
+    !values.length
+  ) {
 
-    arrTaxiChart =
-      chart;
+    return {
+      min: null,
+      avg: null,
+      max: null
+    };
 
   }
+
+
+  const total =
+    values.reduce(
+      (
+        sum,
+        value
+      ) =>
+        sum + value,
+      0
+    );
+
+
+  return {
+
+    min:
+      Math.min(
+        ...values
+      ),
+
+    avg:
+      Math.round(
+        total /
+        values.length *
+        10
+      ) /
+      10,
+
+    max:
+      Math.max(
+        ...values
+      )
+
+  };
 
 }
 
@@ -3478,30 +3298,6 @@ function renderMonthlyTable(
 
         <td>
           ${escapeHtml(row.avgBlockTime || '-')}
-        </td>
-
-        <td>
-          ${minute(row.depTaxiMin)}
-        </td>
-
-        <td>
-          ${minute(row.avgDepTaxi)}
-        </td>
-
-        <td>
-          ${minute(row.depTaxiMax)}
-        </td>
-
-        <td>
-          ${minute(row.arrTaxiMin)}
-        </td>
-
-        <td>
-          ${minute(row.avgArrTaxi)}
-        </td>
-
-        <td>
-          ${minute(row.arrTaxiMax)}
         </td>
 
       `;
