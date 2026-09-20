@@ -12,72 +12,82 @@
 
 <title>Flight Data Analysis</title>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
-<script
-  src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js">
-</script>
-
-<script
-  src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0">
-</script>
-
-
-<link
-  rel="preconnect"
-  href="https://fonts.googleapis.com"
-/>
-
-<link
-  rel="preconnect"
-  href="https://fonts.gstatic.com"
-  crossorigin
-/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
 <link
   href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
   rel="stylesheet"
 />
 
-
 <style>
+
+/* =========================================================
+   THEME
+========================================================= */
 
 :root {
 
   --bg:
-    #07111e;
+    #09131f;
+
+  --bg-deep:
+    #07101a;
 
   --panel:
-    #101f34;
+    #101d2b;
+
+  --panel-light:
+    #142434;
+
+  --panel-dark:
+    #0b1621;
 
   --line:
-    rgba(255,255,255,.09);
+    rgba(192,207,221,.10);
+
+  --line-soft:
+    rgba(192,207,221,.06);
 
   --text:
-    #f5f8fc;
+    #eef3f7;
 
   --muted:
-    #a0b1c6;
+    #94a5b5;
 
-  --blue:
-    #4d8cff;
+  --muted-2:
+    #6f8192;
 
-  --cyan:
-    #2ad6e5;
+  --accent:
+    #718da8;
+
+  --accent-light:
+    #a4b2bf;
+
+  --accent-mid:
+    #708aa3;
+
+  --accent-dark:
+    #405b73;
+
+  --history-accent:
+    #536575;
 
   --green:
-    #41d398;
-
-  --amber:
-    #f5b642;
-
-  --purple:
-    #a987ff;
+    #789c8e;
 
   --red:
-    #ff627a;
+    #c86f78;
 
 }
 
+
+/* =========================================================
+   GENERAL
+========================================================= */
 
 * {
   box-sizing: border-box;
@@ -108,21 +118,21 @@ body {
   background:
 
     radial-gradient(
-      circle at 10% 0%,
-      rgba(70,120,255,.17),
-      transparent 30%
+      circle at 12% 0%,
+      rgba(87,116,145,.17),
+      transparent 32%
     ),
 
     radial-gradient(
-      circle at 90% 5%,
-      rgba(28,208,222,.08),
-      transparent 27%
+      circle at 88% 2%,
+      rgba(77,101,125,.10),
+      transparent 30%
     ),
 
     linear-gradient(
       180deg,
-      #07111e,
-      #091625
+      #08121d,
+      #0a1622
     );
 
 }
@@ -136,7 +146,8 @@ body {
       calc(100% - 32px)
     );
 
-  margin: auto;
+  margin:
+    auto;
 
   padding:
     25px 0 60px;
@@ -150,49 +161,65 @@ body {
 
 .topbar {
 
-  display: flex;
+  display:
+    flex;
 
-  justify-content: space-between;
+  justify-content:
+    space-between;
 
-  align-items: center;
+  align-items:
+    center;
 
-  margin-bottom: 22px;
+  margin-bottom:
+    22px;
 
 }
 
 
 .brand {
 
-  font-size: 25px;
+  font-size:
+    25px;
 
-  font-weight: 800;
+  font-weight:
+    800;
+
+  letter-spacing:
+    -.4px;
 
 }
 
 
 .status {
 
-  display: flex;
+  display:
+    flex;
 
-  align-items: center;
+  align-items:
+    center;
 
-  gap: 8px;
+  gap:
+    8px;
 
   color:
     var(--muted);
 
-  font-size: 14px;
+  font-size:
+    14px;
 
 }
 
 
 .status-dot {
 
-  width: 10px;
+  width:
+    9px;
 
-  height: 10px;
+  height:
+    9px;
 
-  border-radius: 50%;
+  border-radius:
+    50%;
 
   background:
     var(--green);
@@ -219,9 +246,13 @@ body {
   background:
     linear-gradient(
       135deg,
-      #142945,
-      #09192c
+      #15283a,
+      #0c1926
     );
+
+  box-shadow:
+    0 15px 50px
+    rgba(0,0,0,.12);
 
 }
 
@@ -229,13 +260,16 @@ body {
 .eyebrow {
 
   color:
-    var(--cyan);
+    #8fa8be;
 
-  font-size: 13px;
+  font-size:
+    13px;
 
-  font-weight: 800;
+  font-weight:
+    800;
 
-  letter-spacing: 1.6px;
+  letter-spacing:
+    1.7px;
 
 }
 
@@ -250,6 +284,9 @@ body {
 
   font-weight:
     600;
+
+  color:
+    #e4eaf0;
 
 }
 
@@ -307,7 +344,7 @@ body {
 .required-mark {
 
   color:
-    #ff7f93;
+    #bb7c83;
 
   margin-left:
     3px;
@@ -329,13 +366,13 @@ select {
 
   border:
     1px solid
-    rgba(255,255,255,.12);
+    rgba(195,208,221,.12);
 
   border-radius:
     10px;
 
   background:
-    rgba(255,255,255,.055);
+    rgba(255,255,255,.045);
 
   color:
     white;
@@ -352,7 +389,7 @@ select {
 select option {
 
   background:
-    #122137;
+    #11202e;
 
 }
 
@@ -364,11 +401,11 @@ select:focus {
     none;
 
   border-color:
-    var(--blue);
+    #718da8;
 
   box-shadow:
     0 0 0 3px
-    rgba(77,140,255,.1);
+    rgba(113,141,168,.11);
 
 }
 
@@ -388,10 +425,10 @@ select:focus {
     center;
 
   color:
-    var(--cyan);
+    #8ba3b8;
 
   font-size:
-    25px;
+    24px;
 
 }
 
@@ -413,12 +450,15 @@ select:focus {
   background:
     linear-gradient(
       135deg,
-      #377cff,
-      #21bfdc
+      #6885a1,
+      #506b84
     );
 
   color:
     white;
+
+  font-family:
+    inherit;
 
   font-size:
     14px;
@@ -426,12 +466,16 @@ select:focus {
   font-weight:
     800;
 
+  letter-spacing:
+    .2px;
+
   cursor:
     pointer;
 
   transition:
     opacity .2s ease,
-    transform .2s ease;
+    transform .2s ease,
+    filter .2s ease;
 
 }
 
@@ -441,19 +485,19 @@ select:focus {
   transform:
     translateY(-1px);
 
+  filter:
+    brightness(1.07);
+
 }
 
 
 .search-btn:disabled {
 
   opacity:
-    .35;
+    .32;
 
   cursor:
     not-allowed;
-
-  filter:
-    grayscale(.25);
 
 }
 
@@ -564,8 +608,8 @@ select:focus {
   background:
     linear-gradient(
       145deg,
-      #13243b,
-      #0b192b
+      #132231,
+      #0c1925
     );
 
 }
@@ -596,6 +640,9 @@ select:focus {
   font-weight:
     800;
 
+  letter-spacing:
+    -.5px;
+
 }
 
 
@@ -605,7 +652,7 @@ select:focus {
     7px;
 
   color:
-    #8294aa;
+    var(--muted-2);
 
   font-size:
     12px;
@@ -614,7 +661,7 @@ select:focus {
 
 
 /* =========================================================
-   PANELS
+   GENERIC PANEL
 ========================================================= */
 
 .panel {
@@ -632,8 +679,8 @@ select:focus {
   background:
     linear-gradient(
       145deg,
-      #112138,
-      #0a182a
+      #101e2c,
+      #0b1824
     );
 
 }
@@ -646,6 +693,9 @@ select:focus {
 
   font-weight:
     800;
+
+  letter-spacing:
+    -.2px;
 
 }
 
@@ -663,6 +713,10 @@ select:focus {
 
 }
 
+
+/* =========================================================
+   FLIGHT CHART
+========================================================= */
 
 .flight-panel {
 
@@ -689,6 +743,10 @@ select:focus {
 }
 
 
+/* =========================================================
+   TAXI CHART
+========================================================= */
+
 .taxi-grid {
 
   display:
@@ -706,13 +764,25 @@ select:focus {
 }
 
 
+.taxi-panel {
+
+  background:
+    linear-gradient(
+      145deg,
+      #122131,
+      #0d1925
+    );
+
+}
+
+
 .taxi-chart-wrap {
 
   position:
     relative;
 
   height:
-    390px;
+    400px;
 
   margin-top:
     15px;
@@ -720,8 +790,77 @@ select:focus {
 }
 
 
+.taxi-legend-note {
+
+  display:
+    flex;
+
+  gap:
+    18px;
+
+  flex-wrap:
+    wrap;
+
+  margin-top:
+    10px;
+
+  color:
+    var(--muted);
+
+  font-size:
+    12px;
+
+}
+
+
+.legend-item {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    6px;
+
+}
+
+
+.legend-swatch {
+
+  width:
+    12px;
+
+  height:
+    12px;
+
+  border-radius:
+    3px;
+
+}
+
+
+.legend-min {
+  background:
+    #9faebb;
+}
+
+
+.legend-avg {
+  background:
+    #718aa2;
+}
+
+
+.legend-max {
+  background:
+    #40596f;
+}
+
+
 /* =========================================================
-   TABLE
+   TABLE COMMON
 ========================================================= */
 
 .table-panel {
@@ -730,7 +869,7 @@ select:focus {
     none;
 
   margin-top:
-    17px;
+    18px;
 
 }
 
@@ -752,18 +891,10 @@ select:focus {
 }
 
 
-.record-count {
-
-  color:
-    var(--muted);
-
-  font-size:
-    13px;
-
-}
-
-
 .table-scroll {
+
+  margin-top:
+    17px;
 
   max-height:
     680px;
@@ -802,14 +933,14 @@ th {
   padding:
     15px 10px;
 
-  background:
-    #101e33;
-
   color:
-    #a2b2c6;
+    #a9b6c3;
 
   font-size:
     13px;
+
+  font-weight:
+    700;
 
   text-align:
     center;
@@ -829,25 +960,17 @@ td {
     center;
 
   color:
-    #d4deea;
+    #d2dbe3;
 
   border-bottom:
     1px solid
-    rgba(255,255,255,.05);
+    rgba(255,255,255,.045);
 
   font-size:
     14px;
 
   white-space:
     nowrap;
-
-}
-
-
-tbody tr:hover {
-
-  background:
-    rgba(75,133,255,.06);
 
 }
 
@@ -866,7 +989,141 @@ tbody tr:hover {
 .no-data {
 
   color:
-    #65778d;
+    #667789;
+
+}
+
+
+.record-count {
+
+  color:
+    var(--muted);
+
+  font-size:
+    13px;
+
+  font-weight:
+    600;
+
+}
+
+
+/* =========================================================
+   SECTION HEADER / BADGES
+========================================================= */
+
+.section-title-row {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    11px;
+
+}
+
+
+.section-badge {
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  min-height:
+    24px;
+
+  padding:
+    0 9px;
+
+  border-radius:
+    999px;
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    .8px;
+
+  white-space:
+    nowrap;
+
+}
+
+
+/* =========================================================
+   MONTHLY PERFORMANCE
+========================================================= */
+
+.monthly-panel-style {
+
+  background:
+    linear-gradient(
+      145deg,
+      #162637,
+      #10202e
+    );
+
+  border:
+    1px solid
+    rgba(123,151,176,.18);
+
+  box-shadow:
+    inset 4px 0 0
+    #708ba3;
+
+}
+
+
+.monthly-panel-style .table-scroll {
+
+  border:
+    1px solid
+    rgba(130,156,179,.10);
+
+  border-radius:
+    11px;
+
+}
+
+
+.monthly-panel-style th {
+
+  background:
+    #182b3c;
+
+}
+
+
+.monthly-panel-style tbody tr:hover {
+
+  background:
+    rgba(115,142,166,.075);
+
+}
+
+
+.monthly-badge {
+
+  color:
+    #cbd8e2;
+
+  background:
+    rgba(112,139,163,.16);
+
+  border:
+    1px solid
+    rgba(125,151,175,.22);
 
 }
 
@@ -874,7 +1131,7 @@ tbody tr:hover {
 .dep-head {
 
   color:
-    #86b2ff;
+    #a7bdd0;
 
 }
 
@@ -882,7 +1139,88 @@ tbody tr:hover {
 .arr-head {
 
   color:
-    #73e4bc;
+    #aab7c2;
+
+}
+
+
+/* =========================================================
+   FLIGHT HISTORY
+========================================================= */
+
+.history-panel-style {
+
+  margin-top:
+    24px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #0d1823,
+      #09131d
+    );
+
+  border:
+    1px solid
+    rgba(164,179,192,.09);
+
+  box-shadow:
+    inset 4px 0 0
+    #4d5e6d;
+
+}
+
+
+.history-panel-style .table-scroll {
+
+  border:
+    1px solid
+    rgba(150,165,180,.07);
+
+  border-radius:
+    11px;
+
+}
+
+
+.history-panel-style th {
+
+  background:
+    #0f1b27;
+
+  color:
+    #929fa9;
+
+}
+
+
+.history-panel-style td {
+
+  color:
+    #bec8d1;
+
+}
+
+
+.history-panel-style tbody tr:hover {
+
+  background:
+    rgba(120,137,152,.05);
+
+}
+
+
+.history-badge {
+
+  color:
+    #aeb9c3;
+
+  background:
+    rgba(80,96,111,.18);
+
+  border:
+    1px solid
+    rgba(118,132,145,.17);
 
 }
 
@@ -907,7 +1245,7 @@ tbody tr:hover {
 
   border:
     1px dashed
-    rgba(255,255,255,.11);
+    rgba(190,205,220,.10);
 
   border-radius:
     17px;
@@ -965,6 +1303,14 @@ tbody tr:hover {
   }
 
 
+  .hero {
+
+    padding:
+      22px 18px;
+
+  }
+
+
   .search-grid {
 
     grid-template-columns:
@@ -996,7 +1342,15 @@ tbody tr:hover {
   .flight-chart-wrap {
 
     height:
-      340px;
+      350px;
+
+  }
+
+
+  .section-title-row {
+
+    flex-wrap:
+      wrap;
 
   }
 
@@ -1012,7 +1366,9 @@ tbody tr:hover {
 <div class="app">
 
 
-<!-- HEADER -->
+<!-- =======================================================
+     TOP
+======================================================= -->
 
 <div class="topbar">
 
@@ -1038,7 +1394,9 @@ tbody tr:hover {
 
 
 
-<!-- SEARCH -->
+<!-- =======================================================
+     SEARCH
+======================================================= -->
 
 <div class="hero">
 
@@ -1155,6 +1513,10 @@ tbody tr:hover {
 
 
 
+<!-- =======================================================
+     LOADING
+======================================================= -->
+
 <div
   id="loading"
   class="loading"
@@ -1164,7 +1526,9 @@ tbody tr:hover {
 
 
 
-<!-- ROUTE -->
+<!-- =======================================================
+     ROUTE
+======================================================= -->
 
 <div
   id="routeHeader"
@@ -1186,7 +1550,9 @@ tbody tr:hover {
 
 
 
-<!-- KPI -->
+<!-- =======================================================
+     KPI
+======================================================= -->
 
 <div
   id="kpiGrid"
@@ -1301,7 +1667,9 @@ tbody tr:hover {
 
 
 
-<!-- MONTHLY FLIGHT -->
+<!-- =======================================================
+     MONTHLY FLIGHT TIME
+======================================================= -->
 
 <div
   id="flightPanel"
@@ -1319,9 +1687,7 @@ tbody tr:hover {
 
   <div class="flight-chart-wrap">
 
-    <canvas
-      id="flightChart"
-    ></canvas>
+    <canvas id="flightChart"></canvas>
 
   </div>
 
@@ -1329,7 +1695,9 @@ tbody tr:hover {
 
 
 
-<!-- TAXI -->
+<!-- =======================================================
+     TAXI
+======================================================= -->
 
 <div
   id="taxiGrid"
@@ -1337,7 +1705,7 @@ tbody tr:hover {
 >
 
 
-  <div class="panel">
+  <div class="panel taxi-panel">
 
     <div class="panel-title">
       Monthly DEP Taxi
@@ -1348,18 +1716,37 @@ tbody tr:hover {
     </div>
 
 
+    <div class="taxi-legend-note">
+
+      <div class="legend-item">
+        <span class="legend-swatch legend-min"></span>
+        MIN
+      </div>
+
+      <div class="legend-item">
+        <span class="legend-swatch legend-avg"></span>
+        AVG
+      </div>
+
+      <div class="legend-item">
+        <span class="legend-swatch legend-max"></span>
+        MAX
+      </div>
+
+    </div>
+
+
     <div class="taxi-chart-wrap">
 
-      <canvas
-        id="depTaxiChart"
-      ></canvas>
+      <canvas id="depTaxiChart"></canvas>
 
     </div>
 
   </div>
 
 
-  <div class="panel">
+
+  <div class="panel taxi-panel">
 
     <div class="panel-title">
       Monthly ARR Taxi
@@ -1370,11 +1757,29 @@ tbody tr:hover {
     </div>
 
 
+    <div class="taxi-legend-note">
+
+      <div class="legend-item">
+        <span class="legend-swatch legend-min"></span>
+        MIN
+      </div>
+
+      <div class="legend-item">
+        <span class="legend-swatch legend-avg"></span>
+        AVG
+      </div>
+
+      <div class="legend-item">
+        <span class="legend-swatch legend-max"></span>
+        MAX
+      </div>
+
+    </div>
+
+
     <div class="taxi-chart-wrap">
 
-      <canvas
-        id="arrTaxiChart"
-      ></canvas>
+      <canvas id="arrTaxiChart"></canvas>
 
     </div>
 
@@ -1384,20 +1789,30 @@ tbody tr:hover {
 
 
 
-<!-- MONTHLY PERFORMANCE -->
+<!-- =======================================================
+     MONTHLY PERFORMANCE
+======================================================= -->
 
 <div
   id="monthlyPanel"
-  class="panel table-panel"
+  class="panel table-panel monthly-panel-style"
 >
 
-  <div class="panel-title">
-    Monthly Performance
+  <div class="section-title-row">
+
+    <div class="panel-title">
+      Monthly Performance
+    </div>
+
+    <div class="section-badge monthly-badge">
+      MONTHLY SUMMARY
+    </div>
+
   </div>
 
 
   <div class="panel-sub">
-    Calendar-month historical averages · Taxi outliers removed per month
+    Calendar-month performance · Taxi outliers removed per month
   </div>
 
 
@@ -1446,9 +1861,7 @@ tbody tr:hover {
       </thead>
 
 
-      <tbody
-        id="monthlyBody"
-      ></tbody>
+      <tbody id="monthlyBody"></tbody>
 
     </table>
 
@@ -1458,20 +1871,31 @@ tbody tr:hover {
 
 
 
-<!-- HISTORY -->
+<!-- =======================================================
+     FLIGHT HISTORY
+======================================================= -->
 
 <div
   id="historyPanel"
-  class="panel table-panel"
+  class="panel table-panel history-panel-style"
 >
 
   <div class="table-head">
 
     <div>
 
-      <div class="panel-title">
-        Flight History
+      <div class="section-title-row">
+
+        <div class="panel-title">
+          Flight History
+        </div>
+
+        <div class="section-badge history-badge">
+          RAW RECORDS
+        </div>
+
       </div>
+
 
       <div class="panel-sub">
         Individual historical route records
@@ -1521,9 +1945,7 @@ tbody tr:hover {
       </thead>
 
 
-      <tbody
-        id="historyBody"
-      ></tbody>
+      <tbody id="historyBody"></tbody>
 
     </table>
 
@@ -1533,7 +1955,9 @@ tbody tr:hover {
 
 
 
-<!-- EMPTY -->
+<!-- =======================================================
+     EMPTY
+======================================================= -->
 
 <div
   id="empty"
@@ -1567,7 +1991,7 @@ Chart.register(
 
 
 Chart.defaults.color =
-  '#9fb0c4';
+  '#93a4b4';
 
 
 Chart.defaults.font.family =
@@ -1579,7 +2003,7 @@ Chart.defaults.font.size =
 
 
 Chart.defaults.borderColor =
-  'rgba(255,255,255,.06)';
+  'rgba(190,205,220,.06)';
 
 
 let flightChart =
@@ -1617,7 +2041,7 @@ document.addEventListener(
 
 
 /* =========================================================
-   INPUT SETUP
+   INPUT
 ========================================================= */
 
 function setupInputs() {
@@ -1693,7 +2117,7 @@ function setupInputs() {
 
 
 /* =========================================================
-   REQUIRED FIELD CHECK
+   SEARCH READY
 ========================================================= */
 
 function isSearchReady() {
@@ -1727,16 +2151,13 @@ function isSearchReady() {
 
 function updateAnalyzeButton() {
 
-  const button =
-    document
-      .getElementById(
-        'analyzeBtn'
-      );
-
-
-  button.disabled =
-    isLoading ||
-    !isSearchReady();
+  document
+    .getElementById(
+      'analyzeBtn'
+    )
+    .disabled =
+      isLoading ||
+      !isSearchReady();
 
 }
 
@@ -2199,13 +2620,13 @@ function renderAll(
   );
 
 
-  renderTaxiChart(
+  renderTaxiRangeChart(
     monthly,
     'DEP'
   );
 
 
-  renderTaxiChart(
+  renderTaxiRangeChart(
     monthly,
     'ARR'
   );
@@ -2312,7 +2733,7 @@ function renderKPI(
 
 
 /* =========================================================
-   MONTHLY FLIGHT
+   MONTHLY FLIGHT TIME
 ========================================================= */
 
 function renderFlightChart(
@@ -2363,16 +2784,16 @@ function renderFlightChart(
                 ),
 
               borderColor:
-                '#4d8cff',
+                '#718da8',
 
               backgroundColor:
-                'rgba(77,140,255,.14)',
+                'rgba(113,141,168,.13)',
 
               pointBackgroundColor:
-                '#4d8cff',
+                '#89a1b6',
 
               pointBorderColor:
-                '#07111e',
+                '#0a1520',
 
               pointBorderWidth:
                 2,
@@ -2384,7 +2805,7 @@ function renderFlightChart(
                 5,
 
               pointHoverRadius:
-                8,
+                7,
 
               fill:
                 true,
@@ -2426,8 +2847,10 @@ function renderFlightChart(
           plugins: {
 
             legend: {
+
               display:
                 false
+
             },
 
 
@@ -2444,14 +2867,16 @@ function renderFlightChart(
                       ];
 
 
-                  return value !== null &&
-                    value !== undefined;
+                  return (
+                    value !== null &&
+                    value !== undefined
+                  );
 
                 },
 
 
               color:
-                '#dce8ff',
+                '#cbd7e1',
 
               anchor:
                 'end',
@@ -2483,6 +2908,9 @@ function renderFlightChart(
 
 
             tooltip: {
+
+              backgroundColor:
+                '#101d29',
 
               callbacks: {
 
@@ -2520,9 +2948,14 @@ function renderFlightChart(
 
             x: {
 
+              stacked:
+                false,
+
               grid: {
+
                 display:
                   false
+
               },
 
               ticks: {
@@ -2556,7 +2989,7 @@ function renderFlightChart(
               grid: {
 
                 color:
-                  'rgba(255,255,255,.05)'
+                  'rgba(190,205,220,.05)'
 
               },
 
@@ -2569,8 +3002,10 @@ function renderFlightChart(
                     ),
 
                 font: {
+
                   size:
                     13
+
                 }
 
               }
@@ -2588,10 +3023,22 @@ function renderFlightChart(
 
 
 /* =========================================================
-   TAXI CHART
+   TAXI RANGE STACKED BAR
+
+   실제 데이터:
+   MIN = 10
+   AVG = 12.4
+   MAX = 14
+
+   그래프 데이터:
+   BASE = 10
+   MID  = 2.4
+   TOP  = 1.6
+
+   합계 = 14 (MAX)
 ========================================================= */
 
-function renderTaxiChart(
+function renderTaxiRangeChart(
   rows,
   mode
 ) {
@@ -2629,30 +3076,120 @@ function renderTaxiChart(
   }
 
 
+  const getMin =
+    row =>
+      isDep
+        ? row.depTaxiMin
+        : row.arrTaxiMin;
+
+
+  const getAvg =
+    row =>
+      isDep
+        ? row.avgDepTaxi
+        : row.avgArrTaxi;
+
+
+  const getMax =
+    row =>
+      isDep
+        ? row.depTaxiMax
+        : row.arrTaxiMax;
+
+
   const minData =
     rows.map(
-      row =>
-        isDep
-          ? row.depTaxiMin
-          : row.arrTaxiMin
+      row => {
+
+        const min =
+          numericOrNull(
+            getMin(
+              row
+            )
+          );
+
+
+        return min;
+
+      }
     );
 
 
-  const avgData =
+  const avgRange =
     rows.map(
-      row =>
-        isDep
-          ? row.avgDepTaxi
-          : row.avgArrTaxi
+      row => {
+
+        const min =
+          numericOrNull(
+            getMin(
+              row
+            )
+          );
+
+
+        const avg =
+          numericOrNull(
+            getAvg(
+              row
+            )
+          );
+
+
+        if (
+          min === null ||
+          avg === null
+        ) {
+
+          return null;
+
+        }
+
+
+        return Math.max(
+          0,
+          avg - min
+        );
+
+      }
     );
 
 
-  const maxData =
+  const maxRange =
     rows.map(
-      row =>
-        isDep
-          ? row.depTaxiMax
-          : row.arrTaxiMax
+      row => {
+
+        const avg =
+          numericOrNull(
+            getAvg(
+              row
+            )
+          );
+
+
+        const max =
+          numericOrNull(
+            getMax(
+              row
+            )
+          );
+
+
+        if (
+          avg === null ||
+          max === null
+        ) {
+
+          return null;
+
+        }
+
+
+        return Math.max(
+          0,
+          max - avg
+        );
+
+      }
     );
 
 
@@ -2688,19 +3225,35 @@ function renderTaxiChart(
                 minData,
 
               backgroundColor:
-                'rgba(65,211,152,.68)',
+                '#9faebb',
 
               borderColor:
-                '#41d398',
+                '#9faebb',
 
               borderWidth:
-                1.3,
+                0,
 
-              borderRadius:
-                5,
+              borderRadius: {
+
+                topLeft:
+                  0,
+
+                topRight:
+                  0,
+
+                bottomLeft:
+                  6,
+
+                bottomRight:
+                  6
+
+              },
+
+              stack:
+                'taxi',
 
               maxBarThickness:
-                30
+                42
 
             },
 
@@ -2711,22 +3264,25 @@ function renderTaxiChart(
                 'AVG',
 
               data:
-                avgData,
+                avgRange,
 
               backgroundColor:
-                'rgba(77,140,255,.85)',
+                '#718aa2',
 
               borderColor:
-                '#4d8cff',
+                '#718aa2',
 
               borderWidth:
-                1.5,
+                0,
 
               borderRadius:
-                5,
+                0,
+
+              stack:
+                'taxi',
 
               maxBarThickness:
-                30
+                42
 
             },
 
@@ -2737,22 +3293,38 @@ function renderTaxiChart(
                 'MAX',
 
               data:
-                maxData,
+                maxRange,
 
               backgroundColor:
-                'rgba(169,135,255,.72)',
+                '#40596f',
 
               borderColor:
-                '#a987ff',
+                '#40596f',
 
               borderWidth:
-                1.3,
+                0,
 
-              borderRadius:
-                5,
+              borderRadius: {
+
+                topLeft:
+                  6,
+
+                topRight:
+                  6,
+
+                bottomLeft:
+                  0,
+
+                bottomRight:
+                  0
+
+              },
+
+              stack:
+                'taxi',
 
               maxBarThickness:
-                30
+                42
 
             }
 
@@ -2770,12 +3342,29 @@ function renderTaxiChart(
             false,
 
 
+          interaction: {
+
+            mode:
+              'index',
+
+            intersect:
+              false
+
+          },
+
+
           layout: {
 
             padding: {
 
               top:
-                30
+                40,
+
+              left:
+                5,
+
+              right:
+                8
 
             }
 
@@ -2786,62 +3375,83 @@ function renderTaxiChart(
 
             legend: {
 
-              labels: {
-
-                usePointStyle:
-                  true,
-
-                pointStyle:
-                  'rectRounded',
-
-                padding:
-                  18,
-
-                font: {
-
-                  size:
-                    13,
-
-                  weight:
-                    '600'
-
-                }
-
-              }
+              display:
+                false
 
             },
 
 
+            /*
+             * 각 segment의 값 자체가 아니라
+             * 실제 MIN / AVG / MAX를 label로 표시
+             */
             datalabels: {
 
               display:
                 context => {
 
-                  const value =
-                    context
-                      .dataset
-                      .data[
-                        context.dataIndex
-                      ];
+                  const row =
+                    rows[
+                      context.dataIndex
+                    ];
 
 
-                  return value !== null &&
-                    value !== undefined;
+                  const actual =
+                    context.datasetIndex === 0
+                      ? getMin(row)
+                      : context.datasetIndex === 1
+                        ? getAvg(row)
+                        : getMax(row);
+
+
+                  return numericOrNull(
+                    actual
+                  ) !== null;
 
                 },
 
 
               color:
-                '#e8eef8',
+                context => {
+
+                  if (
+                    context.datasetIndex === 0
+                  ) {
+
+                    return '#172330';
+
+                  }
+
+
+                  return '#eef3f7';
+
+                },
+
 
               anchor:
                 'end',
 
               align:
-                'end',
+                context => {
+
+                  /*
+                   * MIN과 AVG는 해당 segment 경계에,
+                   * MAX는 막대 가장 위에
+                   */
+                  return context.datasetIndex === 2
+                    ? 'top'
+                    : 'end';
+
+                },
 
               offset:
-                2,
+                context =>
+                  context.datasetIndex === 2
+                    ? 3
+                    : -2,
+
+              clamp:
+                true,
 
               font: {
 
@@ -2849,23 +3459,83 @@ function renderTaxiChart(
                   11,
 
                 weight:
-                  '700'
+                  '800'
 
               },
 
 
               formatter:
-                value =>
-                  minute(
-                    value
-                  )
+                (
+                  value,
+                  context
+                ) => {
+
+                  const row =
+                    rows[
+                      context.dataIndex
+                    ];
+
+
+                  if (
+                    context.datasetIndex === 0
+                  ) {
+
+                    return 'MIN ' +
+                      minute(
+                        getMin(
+                          row
+                        )
+                      );
+
+                  }
+
+
+                  if (
+                    context.datasetIndex === 1
+                  ) {
+
+                    return 'AVG ' +
+                      minute(
+                        getAvg(
+                          row
+                        )
+                      );
+
+                  }
+
+
+                  return 'MAX ' +
+                    minute(
+                      getMax(
+                        row
+                      )
+                    );
+
+                }
 
             },
 
 
             tooltip: {
 
+              backgroundColor:
+                '#101d29',
+
+              titleColor:
+                '#eef3f7',
+
+              bodyColor:
+                '#c7d2dc',
+
+              padding:
+                12,
+
               callbacks: {
+
+                label:
+                  () =>
+                    null,
+
 
                 afterBody:
                   items => {
@@ -2890,6 +3560,30 @@ function renderTaxiChart(
                       ];
 
 
+                    const min =
+                      getMin(
+                        row
+                      );
+
+
+                    const avg =
+                      getAvg(
+                        row
+                      );
+
+
+                    const max =
+                      getMax(
+                        row
+                      );
+
+
+                    const total =
+                      isDep
+                        ? row.depTaxiTotal
+                        : row.arrTaxiTotal;
+
+
                     const used =
                       isDep
                         ? row.depTaxiSamples
@@ -2902,21 +3596,23 @@ function renderTaxiChart(
                         : row.arrTaxiOutliers;
 
 
-                    const total =
-                      isDep
-                        ? row.depTaxiTotal
-                        : row.arrTaxiTotal;
-
-
                     return [
+
+                      `${mode} Taxi`,
+
+                      `MIN: ${minute(min)}`,
+
+                      `AVG: ${minute(avg)}`,
+
+                      `MAX: ${minute(max)}`,
 
                       '',
 
-                      `Total: ${total}`,
+                      `Total samples: ${total || 0}`,
 
-                      `Used: ${used}`,
+                      `Used: ${used || 0}`,
 
-                      `Excluded: ${excluded}`
+                      `Excluded: ${excluded || 0}`
 
                     ];
 
@@ -2933,9 +3629,14 @@ function renderTaxiChart(
 
             x: {
 
+              stacked:
+                true,
+
               grid: {
+
                 display:
                   false
+
               },
 
               ticks: {
@@ -2966,13 +3667,16 @@ function renderTaxiChart(
 
             y: {
 
+              stacked:
+                true,
+
               beginAtZero:
                 true,
 
               grid: {
 
                 color:
-                  'rgba(255,255,255,.05)'
+                  'rgba(190,205,220,.05)'
 
               },
 
@@ -2984,8 +3688,10 @@ function renderTaxiChart(
                     'm',
 
                 font: {
+
                   size:
                     13
+
                 }
 
               }
@@ -3113,7 +3819,7 @@ function renderMonthlyTable(
 
 
 /* =========================================================
-   HISTORY
+   FLIGHT HISTORY
 ========================================================= */
 
 function renderHistory(
@@ -3352,8 +4058,8 @@ function setLoading(
     )
     .style.background =
       value
-        ? '#4d8cff'
-        : '#41d398';
+        ? '#718da8'
+        : '#789c8e';
 
 
   updateAnalyzeButton();
@@ -3394,7 +4100,7 @@ function setText(
 }
 
 
-function number(
+function numericOrNull(
   value
 ) {
 
@@ -3404,7 +4110,7 @@ function number(
     value === ''
   ) {
 
-    return '-';
+    return null;
 
   }
 
@@ -3415,10 +4121,27 @@ function number(
     );
 
 
+  return Number.isFinite(
+    n
+  )
+    ? n
+    : null;
+
+}
+
+
+function number(
+  value
+) {
+
+  const n =
+    numericOrNull(
+      value
+    );
+
+
   if (
-    !Number.isFinite(
-      n
-    )
+    n === null
   ) {
 
     return '-';
@@ -3430,8 +4153,10 @@ function number(
     .toLocaleString(
       'en-US',
       {
+
         maximumFractionDigits:
           0
+
       }
     );
 
@@ -3442,27 +4167,14 @@ function minute(
   value
 ) {
 
-  if (
-    value === null ||
-    value === undefined ||
-    value === ''
-  ) {
-
-    return '-';
-
-  }
-
-
   const n =
-    Number(
+    numericOrNull(
       value
     );
 
 
   if (
-    !Number.isFinite(
-      n
-    )
+    n === null
   ) {
 
     return '-';
@@ -3489,27 +4201,14 @@ function minToHHMM(
   value
 ) {
 
-  if (
-    value === null ||
-    value === undefined ||
-    value === ''
-  ) {
-
-    return '-';
-
-  }
-
-
   const n =
-    Number(
+    numericOrNull(
       value
     );
 
 
   if (
-    !Number.isFinite(
-      n
-    )
+    n === null
   ) {
 
     return '-';
