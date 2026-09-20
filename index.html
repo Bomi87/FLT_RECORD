@@ -2813,6 +2813,50 @@ function renderFlightChart(
    DEP / ARR 각각의 MIN / AVG / MAX를 한 화면에서 비교.
 ========================================================= */
 
+/*
+ * DEP / ARR 사이 구분선
+ * 두 카테고리의 중앙을 자동 계산하므로 반응형 화면에서도 유지됨.
+ */
+const taxiDepArrDivider = {
+
+  id: 'taxiDepArrDivider',
+
+  beforeDatasetsDraw(chart) {
+
+    const xScale = chart.scales.x;
+    const area = chart.chartArea;
+
+    if (!xScale || !area) {
+      return;
+    }
+
+    const depX = xScale.getPixelForValue(0);
+    const arrX = xScale.getPixelForValue(1);
+
+    if (!Number.isFinite(depX) || !Number.isFinite(arrX)) {
+      return;
+    }
+
+    const dividerX = (depX + arrX) / 2;
+    const ctx = chart.ctx;
+
+    ctx.save();
+
+    ctx.beginPath();
+    ctx.moveTo(dividerX, area.top - 4);
+    ctx.lineTo(dividerX, area.bottom + 28);
+
+    ctx.strokeStyle = 'rgba(190, 205, 224, .22)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([]);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+};
+
+
 function renderTaxiSummaryChart(
   rows
 ) {
@@ -2940,6 +2984,11 @@ function renderTaxiSummaryChart(
 
         type:
           'bar',
+
+
+        plugins: [
+          taxiDepArrDivider
+        ],
 
 
         data: {
@@ -3232,35 +3281,9 @@ function renderTaxiSummaryChart(
                     }
 
 
-                    const isDep =
-                      item.dataIndex === 0;
-
-
-                    const used =
-                      isDep
-                        ? depValues.length
-                        : arrValues.length;
-
-
-                    const excluded =
-                      isDep
-                        ? depExcluded
-                        : arrExcluded;
-
-
-                    const share =
-                      used > 0
-                        ? Math.round(
-                            info.count / used * 100
-                          )
-                        : 0;
-
-
                     return [
                       '',
-                      `Samples in this range: ${info.count}`,
-                      `Share of used samples: ${share}%`,
-                      `Outliers excluded overall: ${excluded}`
+                      `Samples in this range: ${info.count}`
                     ];
 
                   }
