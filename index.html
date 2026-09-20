@@ -3919,10 +3919,10 @@ function renderFlightChart(
                 '#ffffff',
 
               textStrokeColor:
-                '#0b1828',
+                'transparent',
 
               textStrokeWidth:
-                3,
+                0,
 
               anchor:
                 'end',
@@ -3939,10 +3939,10 @@ function renderFlightChart(
               font: {
 
                 size:
-                  13,
+                  12,
 
                 weight:
-                  '900'
+                  'normal'
 
               },
 
@@ -4083,6 +4083,13 @@ function renderFlightChart(
 
 
             y: {
+
+              /*
+               * Keep headroom above the highest point so its HH:MM
+               * datalabel remains visible (e.g. NOV 1:30).
+               */
+              grace:
+                '8%',
 
               grid: {
 
