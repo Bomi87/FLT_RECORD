@@ -4318,11 +4318,9 @@ function renderFlightChart(
               right:
                 hasLowSample
                   ? (
-                      isMobile ? 26 : 34
+                      isMobile ? 14 : 18
                     )
-                  : (
-                      isMobile ? 18 : 24
-                    ),
+                  : 10,
 
               bottom:
                 hasLowSample
@@ -4334,11 +4332,9 @@ function renderFlightChart(
               left:
                 hasLowSample
                   ? (
-                      isMobile ? 26 : 34
+                      isMobile ? 14 : 18
                     )
-                  : (
-                      isMobile ? 18 : 24
-                    )
+                  : 10
 
             }
 
@@ -4591,6 +4587,15 @@ function renderFlightChart(
           scales: {
 
             x: {
+
+              /*
+               * IMPORTANT:
+               * Start JAN and end DEC half a month inside the plotting area.
+               * This moves the actual JAN / DEC tick + point inward,
+               * rather than merely adding outer canvas padding.
+               */
+              offset:
+                true,
 
               grid: {
 
