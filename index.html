@@ -471,19 +471,19 @@ select:focus {
 }
 
 .flight-season-mam {
-  background: #79c995;
+  background: #59D98E;
 }
 
 .flight-season-jja {
-  background: #e3bd65;
+  background: #F2C94C;
 }
 
 .flight-season-son {
-  background: #d58a72;
+  background: #F28C6F;
 }
 
 .flight-season-djf {
-  background: #7ea6d1;
+  background: #72B4F2;
 }
 
 
@@ -3550,25 +3550,25 @@ function rebuildMonthlyFlightAverages(
 const FLIGHT_SEASON_STYLE = {
   MAM: {
     label: 'MAR–MAY',
-    line: '#79c995',
+    line: '#59D98E',
     fill: 'rgba(121,201,149,.11)'
   },
 
   JJA: {
     label: 'JUN–AUG',
-    line: '#e3bd65',
+    line: '#F2C94C',
     fill: 'rgba(227,189,101,.11)'
   },
 
   SON: {
     label: 'SEP–NOV',
-    line: '#d58a72',
+    line: '#F28C6F',
     fill: 'rgba(213,138,114,.11)'
   },
 
   DJF: {
     label: 'DEC–FEB',
-    line: '#7ea6d1',
+    line: '#72B4F2',
     fill: 'rgba(126,166,209,.11)'
   }
 };
@@ -3808,7 +3808,7 @@ function renderFlightChart(
                   ).line,
 
               backgroundColor:
-                'rgba(126,166,209,.06)',
+                'rgba(114,180,242,.035)',
 
               pointBackgroundColor:
                 context =>
@@ -3824,13 +3824,13 @@ function renderFlightChart(
                 2,
 
               borderWidth:
-                3,
+                4,
 
               pointRadius:
-                5,
+                5.5,
 
               pointHoverRadius:
-                8,
+                8.5,
 
               fill:
                 true,
@@ -3900,6 +3900,68 @@ function renderFlightChart(
 
               display:
                 false
+
+            },
+
+
+            /*
+             * Monthly Block Time point labels.
+             * Always display minutes as H:MM instead of raw decimals.
+             */
+            datalabels: {
+
+              /*
+               * Monthly Block Time HH:MM labels:
+               * keep the labels bright and readable regardless
+               * of the seasonal line color behind them.
+               */
+              color:
+                '#ffffff',
+
+              textStrokeColor:
+                '#0b1828',
+
+              textStrokeWidth:
+                3,
+
+              anchor:
+                'end',
+
+              align:
+                'top',
+
+              offset:
+                7,
+
+              clamp:
+                true,
+
+              font: {
+
+                size:
+                  13,
+
+                weight:
+                  '900'
+
+              },
+
+              formatter:
+                value => {
+
+                  const numeric =
+                    numericOrNull(
+                      value
+                    );
+
+
+                  return numeric === null
+                    ? ''
+                    : minToHHMM(
+                        numeric
+                      );
+
+                }
 
             },
 
