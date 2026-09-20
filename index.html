@@ -3776,6 +3776,31 @@ function renderFlightChart(
           },
 
 
+          layout: {
+
+            padding: {
+
+              /*
+               * Reserve space for the season legend in the
+               * upper-right corner of the Monthly Block Time card.
+               */
+              top:
+                34,
+
+              right:
+                18,
+
+              bottom:
+                0,
+
+              left:
+                0
+
+            }
+
+          },
+
+
           plugins: {
 
             legend: {
@@ -3789,19 +3814,25 @@ function renderFlightChart(
               align:
                 'end',
 
+              fullSize:
+                false,
+
               labels: {
 
                 color:
-                  '#9fb0c6',
+                  '#e6eef8',
 
                 boxWidth:
-                  18,
+                  20,
 
                 boxHeight:
-                  4,
+                  5,
 
                 padding:
-                  18,
+                  14,
+
+                usePointStyle:
+                  false,
 
                 font: {
 
@@ -3809,7 +3840,10 @@ function renderFlightChart(
                     11,
 
                   weight:
-                    '700'
+                    '700',
+
+                  family:
+                    'Inter, Arial, sans-serif'
 
                 },
 
