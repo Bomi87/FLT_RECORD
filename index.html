@@ -420,7 +420,88 @@ select:focus {
 .flight-panel {
   display: none;
 
+  position: relative;
+
   margin-bottom: 16px;
+}
+
+
+/*
+ * Monthly Block Time season legend.
+ * Fixed in the upper-right corner of the panel, outside the chart canvas.
+ */
+.flight-season-legend {
+  position: absolute;
+
+  top: 22px;
+  right: 22px;
+
+  z-index: 5;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 18px;
+
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+.flight-season-legend-item {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  color: #ffffff;
+}
+
+.flight-season-swatch {
+  width: 22px;
+  height: 6px;
+
+  flex: 0 0 auto;
+
+  border-radius: 1px;
+}
+
+.flight-season-mam {
+  background: #79c995;
+}
+
+.flight-season-jja {
+  background: #e3bd65;
+}
+
+.flight-season-son {
+  background: #d58a72;
+}
+
+.flight-season-djf {
+  background: #7ea6d1;
+}
+
+
+@media (max-width: 760px) {
+
+  .flight-season-legend {
+    position: static;
+
+    justify-content: flex-start;
+    flex-wrap: wrap;
+
+    gap: 8px 14px;
+
+    margin-top: 12px;
+
+    font-size: 11px;
+  }
+
 }
 
 .flight-chart-wrap {
@@ -1185,6 +1266,34 @@ td {
 
   <div class="panel-sub">
     AVG FLT TIME + AVG DEP & ARR TAXI
+  </div>
+
+
+  <div
+    class="flight-season-legend"
+    aria-label="Season legend"
+  >
+
+    <div class="flight-season-legend-item">
+      <span class="flight-season-swatch flight-season-mam"></span>
+      <span>MAR–MAY</span>
+    </div>
+
+    <div class="flight-season-legend-item">
+      <span class="flight-season-swatch flight-season-jja"></span>
+      <span>JUN–AUG</span>
+    </div>
+
+    <div class="flight-season-legend-item">
+      <span class="flight-season-swatch flight-season-son"></span>
+      <span>SEP–NOV</span>
+    </div>
+
+    <div class="flight-season-legend-item">
+      <span class="flight-season-swatch flight-season-djf"></span>
+      <span>DEC–FEB</span>
+    </div>
+
   </div>
 
 
@@ -3769,26 +3878,10 @@ function renderFlightChart(
             padding: {
 
               top:
-                30
-
-            }
-
-          },
-
-
-          layout: {
-
-            padding: {
-
-              /*
-               * Reserve space for the season legend in the
-               * upper-right corner of the Monthly Block Time card.
-               */
-              top:
-                34,
+                8,
 
               right:
-                18,
+                8,
 
               bottom:
                 0,
@@ -3806,177 +3899,7 @@ function renderFlightChart(
             legend: {
 
               display:
-                true,
-
-              position:
-                'top',
-
-              align:
-                'end',
-
-              fullSize:
-                false,
-
-              labels: {
-
-                color:
-                  '#e6eef8',
-
-                boxWidth:
-                  20,
-
-                boxHeight:
-                  5,
-
-                padding:
-                  14,
-
-                usePointStyle:
-                  false,
-
-                font: {
-
-                  size:
-                    11,
-
-                  weight:
-                    '700',
-
-                  family:
-                    'Inter, Arial, sans-serif'
-
-                },
-
-                generateLabels:
-                  () => [
-
-                    {
-                      text:
-                        'MAR–MAY',
-
-                      strokeStyle:
-                        FLIGHT_SEASON_STYLE.MAM.line,
-
-                      fillStyle:
-                        FLIGHT_SEASON_STYLE.MAM.line,
-
-                      lineWidth:
-                        3,
-
-                      hidden:
-                        false
-                    },
-
-                    {
-                      text:
-                        'JUN–AUG',
-
-                      strokeStyle:
-                        FLIGHT_SEASON_STYLE.JJA.line,
-
-                      fillStyle:
-                        FLIGHT_SEASON_STYLE.JJA.line,
-
-                      lineWidth:
-                        3,
-
-                      hidden:
-                        false
-                    },
-
-                    {
-                      text:
-                        'SEP–NOV',
-
-                      strokeStyle:
-                        FLIGHT_SEASON_STYLE.SON.line,
-
-                      fillStyle:
-                        FLIGHT_SEASON_STYLE.SON.line,
-
-                      lineWidth:
-                        3,
-
-                      hidden:
-                        false
-                    },
-
-                    {
-                      text:
-                        'DEC–FEB',
-
-                      strokeStyle:
-                        FLIGHT_SEASON_STYLE.DJF.line,
-
-                      fillStyle:
-                        FLIGHT_SEASON_STYLE.DJF.line,
-
-                      lineWidth:
-                        3,
-
-                      hidden:
-                        false
-                    }
-
-                  ]
-
-              },
-
-              onClick:
-                () => {}
-
-            },
-
-
-            datalabels: {
-
-              display:
-                context => {
-
-                  const value =
-                    context
-                      .dataset
-                      .data[
-                        context.dataIndex
-                      ];
-
-
-                  return (
-                    value !== null &&
-                    value !== undefined
-                  );
-
-                },
-
-
-              color:
-                '#dce8ff',
-
-              anchor:
-                'end',
-
-              align:
-                'top',
-
-              offset:
-                5,
-
-              font: {
-
-                size:
-                  13,
-
-                weight:
-                  '700'
-
-              },
-
-
-              formatter:
-                value =>
-                  minToHHMM(
-                    value
-                  )
+                false
 
             },
 
