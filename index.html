@@ -1130,7 +1130,7 @@ td {
   </div>
 
   <div class="panel-sub">
-    AVG FLT TIME + AVG DEP & ARR TAXI
+    AVG FLT TIME + AVG DEP TAXI + AVG ARR TAXI · taxi outliers excluded
   </div>
 
 
@@ -1163,7 +1163,7 @@ td {
     </div>
 
     <div class="panel-sub">
-      Overall DEP / ARR taxi comparison · outliers excluded
+      3-minute taxi groups · AVG = most frequent range · outliers excluded
     </div>
 
     <div class="taxi-legend">
@@ -1175,7 +1175,7 @@ td {
 
       <div class="taxi-legend-item">
         <span class="taxi-color taxi-color-avg"></span>
-        AVG
+        AVG / TYPICAL
       </div>
 
       <div class="taxi-legend-item">
@@ -2826,6 +2826,33 @@ function renderTaxiSummaryChart(
   }
 
 
+  /*
+   * Raw taxi samples after the backend/front-end outlier flag is applied.
+   */
+  const depAllValues =
+    rows
+      .map(
+        row => numericOrNull(
+          row.depTaxi
+        )
+      )
+      .filter(
+        value => value !== null
+      );
+
+
+  const arrAllValues =
+    rows
+      .map(
+        row => numericOrNull(
+          row.arrTaxi
+        )
+      )
+      .filter(
+        value => value !== null
+      );
+
+
   const depValues =
     rows
       .filter(
@@ -2856,16 +2883,51 @@ function renderTaxiSummaryChart(
       );
 
 
+  /*
+   * Taxi time is grouped in 3-minute ranges:
+   * 1-3, 4-6, 7-9, 10-12, 13-15 ...
+   *
+   * MIN     = lowest occupied range
+   * TYPICAL = range containing the most samples
+   * MAX     = highest occupied range
+   */
   const depStats =
-    taxiStats(
-      depValues
+    taxiGroupedStats(
+      depValues,
+      3
     );
 
 
   const arrStats =
-    taxiStats(
-      arrValues
+    taxiGroupedStats(
+      arrValues,
+      3
     );
+
+
+  const depExcluded =
+    Math.max(
+      0,
+      depAllValues.length - depValues.length
+    );
+
+
+  const arrExcluded =
+    Math.max(
+      0,
+      arrAllValues.length - arrValues.length
+    );
+
+
+  function groupBarValue(
+    info
+  ) {
+
+    return info
+      ? info.end
+      : null;
+
+  }
 
 
   taxiSummaryChart =
@@ -2896,6 +2958,11 @@ function renderTaxiSummaryChart(
                 'MIN',
 
               data: [
+                groupBarValue(depStats.min),
+                groupBarValue(arrStats.min)
+              ],
+
+              groupInfo: [
                 depStats.min,
                 arrStats.min
               ],
@@ -2924,11 +2991,16 @@ function renderTaxiSummaryChart(
             {
 
               label:
-                'AVG',
+                'AVG / TYPICAL',
 
               data: [
-                depStats.avg,
-                arrStats.avg
+                groupBarValue(depStats.typical),
+                groupBarValue(arrStats.typical)
+              ],
+
+              groupInfo: [
+                depStats.typical,
+                arrStats.typical
               ],
 
               backgroundColor:
@@ -2958,6 +3030,11 @@ function renderTaxiSummaryChart(
                 'MAX',
 
               data: [
+                groupBarValue(depStats.max),
+                groupBarValue(arrStats.max)
+              ],
+
+              groupInfo: [
                 depStats.max,
                 arrStats.max
               ],
@@ -3001,7 +3078,7 @@ function renderTaxiSummaryChart(
             padding: {
 
               top:
-                28,
+                36,
 
               right:
                 20,
@@ -3038,10 +3115,13 @@ function renderTaxiSummaryChart(
               offset:
                 4,
 
+              textAlign:
+                'center',
+
               font: {
 
                 size:
-                  13,
+                  12,
 
                 weight:
                   '700'
@@ -3049,12 +3129,31 @@ function renderTaxiSummaryChart(
               },
 
               formatter:
-                value =>
-                  value === null
-                    ? ''
-                    : compactMinute(
-                        value
-                      )
+                (
+                  value,
+                  context
+                ) => {
+
+                  const info =
+                    context.dataset.groupInfo &&
+                    context.dataset.groupInfo[
+                      context.dataIndex
+                    ];
+
+
+                  if (!info) {
+
+                    return '';
+
+                  }
+
+
+                  return [
+                    info.label + 'm',
+                    `n=${info.count}`
+                  ];
+
+                }
 
             },
 
@@ -3076,8 +3175,32 @@ function renderTaxiSummaryChart(
               callbacks: {
 
                 label:
-                  context =>
-                    `${context.dataset.label}: ${minute(context.raw)}`,
+                  context => {
+
+                    const info =
+                      context.dataset.groupInfo &&
+                      context.dataset.groupInfo[
+                        context.dataIndex
+                      ];
+
+
+                    if (!info) {
+
+                      return '';
+
+                    }
+
+
+                    const prefix =
+                      context.dataset.label === 'AVG / TYPICAL'
+                        ? 'Most common range'
+                        : context.dataset.label + ' range';
+
+
+                    return `${prefix}: ${info.label} min`;
+
+                  },
+
 
                 afterBody:
                   items => {
@@ -3091,18 +3214,26 @@ function renderTaxiSummaryChart(
                     }
 
 
+                    const item =
+                      items[0];
+
+
+                    const info =
+                      item.dataset.groupInfo &&
+                      item.dataset.groupInfo[
+                        item.dataIndex
+                      ];
+
+
+                    if (!info) {
+
+                      return [];
+
+                    }
+
+
                     const isDep =
-                      items[0].dataIndex === 0;
-
-
-                    const total =
-                      isDep
-                        ? rows.filter(
-                            row => numericOrNull(row.depTaxi) !== null
-                          ).length
-                        : rows.filter(
-                            row => numericOrNull(row.arrTaxi) !== null
-                          ).length;
+                      item.dataIndex === 0;
 
 
                     const used =
@@ -3111,11 +3242,25 @@ function renderTaxiSummaryChart(
                         : arrValues.length;
 
 
+                    const excluded =
+                      isDep
+                        ? depExcluded
+                        : arrExcluded;
+
+
+                    const share =
+                      used > 0
+                        ? Math.round(
+                            info.count / used * 100
+                          )
+                        : 0;
+
+
                     return [
                       '',
-                      `Total samples: ${total}`,
-                      `Used: ${used}`,
-                      `Excluded: ${Math.max(0, total - used)}`
+                      `Samples in this range: ${info.count}`,
+                      `Share of used samples: ${share}%`,
+                      `Outliers excluded overall: ${excluded}`
                     ];
 
                   }
@@ -3195,8 +3340,9 @@ function renderTaxiSummaryChart(
 }
 
 
-function taxiStats(
-  values
+function taxiGroupedStats(
+  values,
+  bucketSize = 3
 ) {
 
   if (
@@ -3205,43 +3351,135 @@ function taxiStats(
 
     return {
       min: null,
-      avg: null,
-      max: null
+      typical: null,
+      max: null,
+      groups: []
     };
 
   }
 
 
-  const total =
-    values.reduce(
-      (
-        sum,
+  const groups =
+    new Map();
+
+
+  values.forEach(
+    value => {
+
+      /*
+       * Taxi values are normally whole minutes.
+       * A decimal value is rounded upward only for bucket placement,
+       * so 13.0-15.0 stays inside the 13-15 group.
+       */
+      const minuteValue =
+        Math.max(
+          1,
+          Math.ceil(value)
+        );
+
+
+      const start =
+        Math.floor(
+          (minuteValue - 1) /
+          bucketSize
+        ) *
+        bucketSize +
+        1;
+
+
+      const end =
+        start +
+        bucketSize -
+        1;
+
+
+      const key =
+        `${start}-${end}`;
+
+
+      if (
+        !groups.has(key)
+      ) {
+
+        groups.set(
+          key,
+          {
+            start: start,
+            end: end,
+            label: `${start}–${end}`,
+            count: 0,
+            values: []
+          }
+        );
+
+      }
+
+
+      const group =
+        groups.get(key);
+
+
+      group.count +=
+        1;
+
+
+      group.values.push(
         value
-      ) =>
-        sum + value,
-      0
-    );
+      );
+
+    }
+  );
+
+
+  const sorted =
+    Array
+      .from(
+        groups.values()
+      )
+      .sort(
+        (
+          a,
+          b
+        ) =>
+          a.start - b.start
+      );
+
+
+  let typical =
+    sorted[0];
+
+
+  sorted.forEach(
+    group => {
+
+      if (
+        group.count > typical.count
+      ) {
+
+        typical =
+          group;
+
+      }
+
+    }
+  );
 
 
   return {
 
     min:
-      Math.min(
-        ...values
-      ),
+      sorted[0],
 
-    avg:
-      Math.round(
-        total /
-        values.length *
-        10
-      ) /
-      10,
+    typical:
+      typical,
 
     max:
-      Math.max(
-        ...values
-      )
+      sorted[
+        sorted.length - 1
+      ],
+
+    groups:
+      sorted
 
   };
 
