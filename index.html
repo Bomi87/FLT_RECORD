@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
   <title>Flight Data Analysis</title>
 
@@ -906,12 +906,25 @@ td {
     padding: 20px 16px;
   }
 
-  /* iPhone / iPad input focus auto-zoom prevention */
+  /* iPhone / iPad focus auto-zoom prevention.
+     18px is used intentionally because some iOS Safari/WebView builds
+     still zoom form controls at the 16px boundary. */
+  html,
+  body {
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+  }
+
   input,
   select,
-  textarea {
-    font-size: 16px !important;
-    -webkit-text-size-adjust: 100%;
+  textarea,
+  #dep,
+  #arr,
+  #tail {
+    font-size: 18px !important;
+    line-height: 1.2 !important;
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
     touch-action: manipulation;
   }
 
@@ -5854,6 +5867,50 @@ function escapeHtml(
 
 
 
+/* =========================================================
+   IOS INPUT FOCUS ZOOM - DEFENSIVE GUARD
+   Some iOS Safari / in-app WebViews still auto-zoom at the 16px
+   threshold. Force an 18px computed font size BEFORE focus happens.
+========================================================= */
+(function installIOSFocusZoomGuard() {
+
+  const isIOS =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  if (!isIOS) {
+    return;
+  }
+
+  const selector = '#dep, #arr, #tail';
+
+  function forceSafeFont(target) {
+    if (target && target.matches && target.matches(selector)) {
+      target.style.setProperty('font-size', '18px', 'important');
+      target.style.setProperty('line-height', '1.2', 'important');
+    }
+  }
+
+  document.addEventListener(
+    'touchstart',
+    event => forceSafeFont(event.target),
+    { capture: true, passive: true }
+  );
+
+  document.addEventListener(
+    'pointerdown',
+    event => forceSafeFont(event.target),
+    true
+  );
+
+  document.addEventListener(
+    'focusin',
+    event => forceSafeFont(event.target),
+    true
+  );
+
+})();
+
 (function waitForPortalAuth() {
 
   /*
@@ -5913,77 +5970,11 @@ function escapeHtml(
 <script src="https://bomi87.github.io/SK-Aviation-portal/common-auth.js">
 
 /* =========================================================
-   IOS FOCUS ZOOM GUARD
-   - Keeps normal pinch zoom available when no form field is focused.
-   - Temporarily locks page scale only while an input/select/textarea is focused.
+   IOS FOCUS ZOOM
+   Prevented at page-load level by the viewport meta tag and
+   18px minimum form-control font size on mobile.
 ========================================================= */
-(function setupIOSFocusZoomGuard() {
-
-  const isIOS =
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-  if (!isIOS) {
-    return;
-  }
-
-  const viewport =
-    document.querySelector('meta[name="viewport"]');
-
-  if (!viewport) {
-    return;
-  }
-
-  const normalViewport =
-    'width=device-width, initial-scale=1.0, viewport-fit=cover';
-
-  const focusViewport =
-    'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
-
-  document.addEventListener(
-    'focusin',
-    event => {
-
-      if (
-        event.target.matches(
-          'input, select, textarea'
-        )
-      ) {
-        viewport.setAttribute(
-          'content',
-          focusViewport
-        );
-      }
-
-    },
-    true
-  );
-
-  document.addEventListener(
-    'focusout',
-    event => {
-
-      if (
-        event.target.matches(
-          'input, select, textarea'
-        )
-      ) {
-        window.setTimeout(
-          () => {
-            viewport.setAttribute(
-              'content',
-              normalViewport
-            );
-          },
-          250
-        );
-      }
-
-    },
-    true
-  );
-
-})();
+;
 
 </script>
 
