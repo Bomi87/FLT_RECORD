@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
   <title>Flight Data Analysis</title>
 
@@ -58,6 +58,8 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -904,10 +906,13 @@ td {
     padding: 20px 16px;
   }
 
-  /* iPhone Safari input focus auto-zoom prevention */
+  /* iPhone / iPad input focus auto-zoom prevention */
   input,
-  select {
-    font-size: 16px;
+  select,
+  textarea {
+    font-size: 16px !important;
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
   }
 
   /* DEP / ARR / TAIL on one row */
@@ -1021,9 +1026,21 @@ td {
     grid-template-columns: 1fr;
   }
 
-  .taxi-chart-wrap,
+  /* Mobile chart heights: keep flight chart roomy, make taxi summary compact */
   .flight-chart-wrap {
     height: 350px;
+  }
+
+  .taxi-chart-wrap {
+    height: 270px;
+    margin-top: 10px;
+  }
+
+  .taxi-legend {
+    gap: 14px;
+    margin-top: 9px;
+    font-size: 11px;
+    flex-wrap: wrap;
   }
 
   .section-title-row {
@@ -4213,7 +4230,7 @@ function renderFlightChart(
                 font: {
 
                   size:
-                    13
+                    isMobile ? 11 : 13
 
                 }
 
@@ -4506,6 +4523,12 @@ function renderTaxiSummaryChart(
   arr
 ) {
 
+  const isMobile =
+    window.matchMedia(
+      '(max-width: 850px)'
+    ).matches;
+
+
   if (
     taxiSummaryChart
   ) {
@@ -4671,13 +4694,13 @@ function renderTaxiSummaryChart(
                 5,
 
               maxBarThickness:
-                34,
+                isMobile ? 18 : 34,
 
               categoryPercentage:
-                .58,
+                isMobile ? .44 : .58,
 
               barPercentage:
-                .72
+                isMobile ? .58 : .72
 
             },
 
@@ -4707,13 +4730,13 @@ function renderTaxiSummaryChart(
                 5,
 
               maxBarThickness:
-                34,
+                isMobile ? 18 : 34,
 
               categoryPercentage:
-                .58,
+                isMobile ? .44 : .58,
 
               barPercentage:
-                .72
+                isMobile ? .58 : .72
 
             },
 
@@ -4743,13 +4766,13 @@ function renderTaxiSummaryChart(
                 5,
 
               maxBarThickness:
-                34,
+                isMobile ? 18 : 34,
 
               categoryPercentage:
-                .58,
+                isMobile ? .44 : .58,
 
               barPercentage:
-                .72
+                isMobile ? .58 : .72
 
             }
 
@@ -4772,13 +4795,13 @@ function renderTaxiSummaryChart(
             padding: {
 
               top:
-                36,
+                isMobile ? 24 : 36,
 
               right:
-                20,
+                isMobile ? 8 : 20,
 
               left:
-                10
+                isMobile ? 2 : 10
 
             }
 
@@ -4838,6 +4861,38 @@ function renderTaxiSummaryChart(
                   if (!info) {
 
                     return '';
+
+                  }
+
+
+                  /*
+                   * On mobile, identical adjacent labels (for example AVG=MAX)
+                   * are shown only once so text never stacks on top of itself.
+                   */
+                  if (isMobile && context.datasetIndex > 0) {
+
+                    const previousDataset =
+                      context.chart.data.datasets[
+                        context.datasetIndex - 1
+                      ];
+
+                    const previousInfo =
+                      previousDataset &&
+                      previousDataset.groupInfo
+                        ? previousDataset.groupInfo[
+                            context.dataIndex
+                          ]
+                        : null;
+
+                    if (
+                      previousInfo &&
+                      previousInfo.label === info.label &&
+                      previousInfo.count === info.count
+                    ) {
+
+                      return '';
+
+                    }
 
                   }
 
@@ -5855,7 +5910,82 @@ function escapeHtml(
 
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://bomi87.github.io/SK-Aviation-portal/common-auth.js"></script>
+<script src="https://bomi87.github.io/SK-Aviation-portal/common-auth.js">
+
+/* =========================================================
+   IOS FOCUS ZOOM GUARD
+   - Keeps normal pinch zoom available when no form field is focused.
+   - Temporarily locks page scale only while an input/select/textarea is focused.
+========================================================= */
+(function setupIOSFocusZoomGuard() {
+
+  const isIOS =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  if (!isIOS) {
+    return;
+  }
+
+  const viewport =
+    document.querySelector('meta[name="viewport"]');
+
+  if (!viewport) {
+    return;
+  }
+
+  const normalViewport =
+    'width=device-width, initial-scale=1.0, viewport-fit=cover';
+
+  const focusViewport =
+    'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+
+  document.addEventListener(
+    'focusin',
+    event => {
+
+      if (
+        event.target.matches(
+          'input, select, textarea'
+        )
+      ) {
+        viewport.setAttribute(
+          'content',
+          focusViewport
+        );
+      }
+
+    },
+    true
+  );
+
+  document.addEventListener(
+    'focusout',
+    event => {
+
+      if (
+        event.target.matches(
+          'input, select, textarea'
+        )
+      ) {
+        window.setTimeout(
+          () => {
+            viewport.setAttribute(
+              'content',
+              normalViewport
+            );
+          },
+          250
+        );
+      }
+
+    },
+    true
+  );
+
+})();
+
+</script>
 
 </body>
 </html>
