@@ -3427,6 +3427,123 @@ function rebuildMonthlyFlightAverages(
 }
 
 
+/*
+ * Seasonal visual grouping for Monthly Block Time.
+ *
+ * MAM : MAR / APR / MAY
+ * JJA : JUN / JUL / AUG
+ * SON : SEP / OCT / NOV
+ * DJF : DEC / JAN / FEB
+ *
+ * This is presentation only.
+ * It does NOT change the seasonal FLT TIME outlier calculation.
+ */
+const FLIGHT_SEASON_STYLE = {
+  MAM: {
+    label: 'MAR–MAY',
+    line: '#79c995',
+    fill: 'rgba(121,201,149,.11)'
+  },
+
+  JJA: {
+    label: 'JUN–AUG',
+    line: '#e3bd65',
+    fill: 'rgba(227,189,101,.11)'
+  },
+
+  SON: {
+    label: 'SEP–NOV',
+    line: '#d58a72',
+    fill: 'rgba(213,138,114,.11)'
+  },
+
+  DJF: {
+    label: 'DEC–FEB',
+    line: '#7ea6d1',
+    fill: 'rgba(126,166,209,.11)'
+  }
+};
+
+
+function flightSeasonFromMonth(
+  month
+) {
+
+  if (
+    month === 12 ||
+    month === 1 ||
+    month === 2
+  ) {
+
+    return 'DJF';
+
+  }
+
+
+  if (
+    month >= 3 &&
+    month <= 5
+  ) {
+
+    return 'MAM';
+
+  }
+
+
+  if (
+    month >= 6 &&
+    month <= 8
+  ) {
+
+    return 'JJA';
+
+  }
+
+
+  if (
+    month >= 9 &&
+    month <= 11
+  ) {
+
+    return 'SON';
+
+  }
+
+
+  return null;
+
+}
+
+
+function flightSeasonStyleByIndex(
+  rows,
+  index
+) {
+
+  const row =
+    rows[index];
+
+
+  const month =
+    monthNumberFromMonthlyRow(
+      row,
+      index
+    );
+
+
+  const season =
+    flightSeasonFromMonth(
+      month
+    );
+
+
+  return FLIGHT_SEASON_STYLE[
+    season
+  ] || FLIGHT_SEASON_STYLE.DJF;
+
+}
+
+
 /* =========================================================
    FLIGHT TIME CHART
 ========================================================= */
@@ -3570,14 +3687,26 @@ function renderFlightChart(
                   }
                 ),
 
+              /*
+               * Color the monthly line / points by meteorological season.
+               * The statistical calculation itself is unchanged.
+               */
               borderColor:
-                '#7ea6d1',
+                context =>
+                  flightSeasonStyleByIndex(
+                    rows,
+                    context.dataIndex || 0
+                  ).line,
 
               backgroundColor:
-                'rgba(126,166,209,.14)',
+                'rgba(126,166,209,.06)',
 
               pointBackgroundColor:
-                '#8ab1d8',
+                context =>
+                  flightSeasonStyleByIndex(
+                    rows,
+                    context.dataIndex
+                  ).line,
 
               pointBorderColor:
                 '#07111e',
@@ -3601,7 +3730,23 @@ function renderFlightChart(
                 .28,
 
               spanGaps:
-                false
+                false,
+
+              /*
+               * Each segment takes the color of the month it enters.
+               * This makes MAR–MAY / JUN–AUG / SEP–NOV / DEC–FEB
+               * visually distinct while keeping one continuous chart.
+               */
+              segment: {
+
+                borderColor:
+                  context =>
+                    flightSeasonStyleByIndex(
+                      rows,
+                      context.p1DataIndex
+                    ).line
+
+              }
 
             }
 
@@ -3636,7 +3781,115 @@ function renderFlightChart(
             legend: {
 
               display:
-                false
+                true,
+
+              position:
+                'top',
+
+              align:
+                'end',
+
+              labels: {
+
+                color:
+                  '#9fb0c6',
+
+                boxWidth:
+                  18,
+
+                boxHeight:
+                  4,
+
+                padding:
+                  18,
+
+                font: {
+
+                  size:
+                    11,
+
+                  weight:
+                    '700'
+
+                },
+
+                generateLabels:
+                  () => [
+
+                    {
+                      text:
+                        'MAR–MAY',
+
+                      strokeStyle:
+                        FLIGHT_SEASON_STYLE.MAM.line,
+
+                      fillStyle:
+                        FLIGHT_SEASON_STYLE.MAM.line,
+
+                      lineWidth:
+                        3,
+
+                      hidden:
+                        false
+                    },
+
+                    {
+                      text:
+                        'JUN–AUG',
+
+                      strokeStyle:
+                        FLIGHT_SEASON_STYLE.JJA.line,
+
+                      fillStyle:
+                        FLIGHT_SEASON_STYLE.JJA.line,
+
+                      lineWidth:
+                        3,
+
+                      hidden:
+                        false
+                    },
+
+                    {
+                      text:
+                        'SEP–NOV',
+
+                      strokeStyle:
+                        FLIGHT_SEASON_STYLE.SON.line,
+
+                      fillStyle:
+                        FLIGHT_SEASON_STYLE.SON.line,
+
+                      lineWidth:
+                        3,
+
+                      hidden:
+                        false
+                    },
+
+                    {
+                      text:
+                        'DEC–FEB',
+
+                      strokeStyle:
+                        FLIGHT_SEASON_STYLE.DJF.line,
+
+                      fillStyle:
+                        FLIGHT_SEASON_STYLE.DJF.line,
+
+                      lineWidth:
+                        3,
+
+                      hidden:
+                        false
+                    }
+
+                  ]
+
+              },
+
+              onClick:
+                () => {}
 
             },
 
