@@ -892,29 +892,133 @@ td {
 
 @media(max-width:850px) {
 
+  /* =========================================================
+     MOBILE ONLY
+  ========================================================= */
+
   .app {
-    width:
-      calc(100% - 18px);
+    width: calc(100% - 18px);
   }
 
   .hero {
-    padding:
-      23px 18px;
+    padding: 20px 16px;
   }
 
+  /* iPhone Safari input focus auto-zoom prevention */
+  input,
+  select {
+    font-size: 16px;
+  }
+
+  /* DEP / ARR / TAIL on one row */
   .search-grid {
     grid-template-columns:
-      1fr;
+      minmax(0, 1fr)
+      minmax(0, 1fr)
+      minmax(0, 1fr);
+
+    gap: 8px;
+    margin-top: 22px;
   }
 
+  .route-arrow {
+    display: none;
+  }
+
+  /* Hide date range on mobile only */
+  .field:has(#fromDate),
+  .field:has(#toDate) {
+    display: none;
+  }
+
+  .field input,
+  .field select {
+    height: 44px;
+    padding: 0 10px;
+    border-radius: 9px;
+  }
+
+  .field label {
+    margin-bottom: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  /* ANALYZE button occupies the full second row */
+  .search-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: 46px;
+    margin-top: 3px;
+  }
+
+  .route-header {
+    margin: 23px 2px 12px;
+  }
+
+  .route-name {
+    font-size: 25px;
+  }
+
+  .route-meta {
+    font-size: 13px;
+  }
+
+  /*
+     KPI mobile layout
+     FLIGHTS
+     AVG FLIGHT TIME | AVG BLOCK TIME
+     AVG DEP TAXI    | AVG ARR TAXI
+  */
   .kpi-grid {
     grid-template-columns:
-      repeat(2,1fr);
+      repeat(2, minmax(0, 1fr));
+
+    gap: 9px;
+    margin-bottom: 15px;
+  }
+
+  .kpi-grid .kpi:first-child {
+    grid-column: 1 / -1;
+    min-height: 94px;
+  }
+
+  .kpi {
+    min-height: 104px;
+    padding: 14px 15px;
+    border-radius: 13px;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+  }
+
+  .kpi-value {
+    margin-top: 6px;
+    font-size: 24px;
+    line-height: 1.05;
+  }
+
+  .kpi-sub {
+    margin-top: 5px;
+    font-size: 10px;
+    line-height: 1.25;
+  }
+
+  .panel {
+    padding: 18px 16px;
+  }
+
+  .panel-title {
+    font-size: 18px;
+  }
+
+  .panel-sub {
+    font-size: 12px;
   }
 
   .taxi-grid {
-    grid-template-columns:
-      1fr;
+    grid-template-columns: 1fr;
   }
 
   .taxi-chart-wrap,
