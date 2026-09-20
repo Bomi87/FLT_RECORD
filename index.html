@@ -725,6 +725,45 @@ td {
     rgba(130,150,170,.045);
 }
 
+.history-month-row td {
+  padding: 11px 14px;
+
+  text-align: left;
+
+  color: #d7e3f0;
+
+  background:
+    rgba(126,166,209,.10);
+
+  border-top:
+    1px solid
+    rgba(126,166,209,.16);
+
+  border-bottom:
+    1px solid
+    rgba(126,166,209,.10);
+
+  font-size: 12px;
+  font-weight: 800;
+
+  letter-spacing: .8px;
+}
+
+.history-month-count {
+  margin-left: 10px;
+
+  color: #8092a8;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  letter-spacing: 0;
+}
+
+.history-panel-style .history-month-row:hover {
+  background: transparent;
+}
+
 
 /* =========================================================
    EMPTY
@@ -4490,12 +4529,6 @@ function renderHistory(
   rows
 ) {
 
-  setText(
-    'recordCount',
-    `${rows.length} RECORDS`
-  );
-
-
   const tbody =
     document
       .getElementById(
@@ -4507,10 +4540,161 @@ function renderHistory(
     '';
 
 
-  rows
-    .slice()
-    .reverse()
-    .forEach(
+  /*
+   * Flight History grouping:
+   * JAN → FEB → ... → DEC
+   *
+   * Within each month, records are sorted by date ascending.
+   */
+  const grouped = {};
+
+
+  for (
+    let month = 1;
+    month <= 12;
+    month++
+  ) {
+
+    grouped[month] = [];
+
+  }
+
+
+  rows.forEach(
+    row => {
+
+      const month =
+        monthNumberFromHistoryDate(
+          row.date
+        );
+
+
+      if (
+        month >= 1 &&
+        month <= 12
+      ) {
+
+        grouped[month]
+          .push(
+            row
+          );
+
+      }
+
+    }
+  );
+
+
+  const monthNames = [
+    '',
+    'JANUARY',
+    'FEBRUARY',
+    'MARCH',
+    'APRIL',
+    'MAY',
+    'JUNE',
+    'JULY',
+    'AUGUST',
+    'SEPTEMBER',
+    'OCTOBER',
+    'NOVEMBER',
+    'DECEMBER'
+  ];
+
+
+  let renderedCount =
+    0;
+
+
+  for (
+    let month = 1;
+    month <= 12;
+    month++
+  ) {
+
+    const monthRows =
+      grouped[month];
+
+
+    if (
+      !monthRows.length
+    ) {
+
+      continue;
+
+    }
+
+
+    monthRows.sort(
+      (
+        a,
+        b
+      ) => {
+
+        const da =
+          new Date(
+            a.date
+          );
+
+
+        const db =
+          new Date(
+            b.date
+          );
+
+
+        const ta =
+          Number.isNaN(
+            da.getTime()
+          )
+            ? 0
+            : da.getTime();
+
+
+        const tb =
+          Number.isNaN(
+            db.getTime()
+          )
+            ? 0
+            : db.getTime();
+
+
+        return ta - tb;
+
+      }
+    );
+
+
+    /*
+     * Month separator row.
+     */
+    const monthTr =
+      document
+        .createElement(
+          'tr'
+        );
+
+
+    monthTr.className =
+      'history-month-row';
+
+
+    monthTr.innerHTML = `
+      <td colspan="10">
+        ${monthNames[month]}
+        <span class="history-month-count">
+          ${monthRows.length} flights
+        </span>
+      </td>
+    `;
+
+
+    tbody.appendChild(
+      monthTr
+    );
+
+
+    monthRows.forEach(
       row => {
 
         const tr =
@@ -4570,8 +4754,19 @@ function renderHistory(
           tr
         );
 
+
+        renderedCount += 1;
+
       }
     );
+
+  }
+
+
+  setText(
+    'recordCount',
+    `${renderedCount} records`
+  );
 
 }
 
