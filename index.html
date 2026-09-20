@@ -2,1315 +2,4000 @@
 <html lang="ko">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Flight Data Analysis</title>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
     rel="stylesheet"
-  />
-
-  <style>
-    :root {
-      --bg: #07111e;
-      --panel: #101f34;
-      --line: rgba(255,255,255,.09);
-      --text: #f5f8fc;
-      --muted: #a0b1c6;
-      --blue: #4d8cff;
-      --cyan: #2ad6e5;
-      --green: #41d398;
-      --amber: #f5b642;
-      --purple: #a987ff;
-      --red: #ff627a;
-
-      /* Taxi only */
-      --taxi-min: #c8d2dc;
-      --taxi-avg: #8fa3b8;
-      --taxi-max: #5c738c;
-
-      --monthly-accent: #5fa8ff;
-      --history-accent: #7b8aa0;
-    }
-
-    * { box-sizing: border-box; }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 10% 0%, rgba(70,120,255,.17), transparent 30%),
-        radial-gradient(circle at 90% 5%, rgba(28,208,222,.08), transparent 27%),
-        linear-gradient(180deg, #07111e, #091625);
-    }
-
-    .app {
-      width: min(1600px, calc(100% - 32px));
-      margin: auto;
-      padding: 25px 0 60px;
-    }
-
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 22px;
-    }
-
-    .brand {
-      font-size: 25px;
-      font-weight: 800;
-    }
-
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--green);
-    }
-
-    .hero {
-      padding: 28px 30px 30px;
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      background: linear-gradient(135deg, #142945, #09192c);
-    }
-
-    .eyebrow {
-      color: var(--cyan);
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 1.6px;
-    }
-
-    .hero-description {
-      margin-top: 9px;
-      font-size: 19px;
-      font-weight: 600;
-    }
-
-    .search-grid {
-      display: grid;
-      grid-template-columns: 1fr 46px 1fr 1fr 1fr 1fr auto;
-      gap: 12px;
-      margin-top: 27px;
-      align-items: end;
-    }
-
-    .field label {
-      display: block;
-      margin-bottom: 7px;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .required-mark {
-      color: #ff7f93;
-      margin-left: 3px;
-    }
-
-    input, select {
-      width: 100%;
-      height: 49px;
-      padding: 0 14px;
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 10px;
-      background: rgba(255,255,255,.055);
-      color: white;
-      font-family: inherit;
-      font-size: 15px;
-    }
-
-    select option {
-      background: #122137;
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--blue);
-      box-shadow: 0 0 0 3px rgba(77,140,255,.1);
-    }
-
-    .route-arrow {
-      height: 49px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: var(--cyan);
-      font-size: 25px;
-    }
-
-    .search-btn {
-      height: 49px;
-      padding: 0 27px;
-      border: 0;
-      border-radius: 10px;
-      background: linear-gradient(135deg, #377cff, #21bfdc);
-      color: white;
-      font-size: 14px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: opacity .2s ease, transform .2s ease;
-    }
-
-    .search-btn:not(:disabled):hover {
-      transform: translateY(-1px);
-    }
-
-    .search-btn:disabled {
-      opacity: .35;
-      cursor: not-allowed;
-      filter: grayscale(.25);
-    }
-
-    .loading {
-      display: none;
-      padding: 30px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 16px;
-    }
-
-    .route-header {
-      display: none;
-      margin: 29px 2px 15px;
-    }
-
-    .route-name {
-      font-size: 29px;
-      font-weight: 800;
-    }
-
-    .route-meta {
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .kpi-grid {
-      display: none;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 13px;
-      margin-bottom: 18px;
-    }
-
-    .kpi {
-      min-height: 130px;
-      padding: 19px;
-      border: 1px solid var(--line);
-      border-radius: 15px;
-      background: linear-gradient(145deg, #13243b, #0b192b);
-    }
-
-    .kpi-label {
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .kpi-value {
-      margin-top: 9px;
-      font-size: 30px;
-      font-weight: 800;
-    }
-
-    .kpi-sub {
-      margin-top: 7px;
-      color: #8294aa;
-      font-size: 12px;
-    }
-
-    .panel {
-      padding: 22px;
-      border: 1px solid var(--line);
-      border-radius: 17px;
-      background: linear-gradient(145deg, #112138, #0a182a);
-    }
-
-    .panel-title {
-      font-size: 20px;
-      font-weight: 800;
-    }
-
-    .panel-sub {
-      margin-top: 5px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .flight-panel {
-      display: none;
-      margin-bottom: 16px;
-    }
-
-    .flight-chart-wrap {
-      position: relative;
-      height: 360px;
-      margin-top: 15px;
-    }
-
-    .taxi-grid {
-      display: none;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-
-    .taxi-chart-wrap {
-      position: relative;
-      height: 400px;
-      margin-top: 15px;
-    }
-
-    .taxi-legend-note {
-      display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .legend-swatch {
-      width: 12px;
-      height: 12px;
-      border-radius: 3px;
-    }
-
-    .legend-min { background: var(--taxi-min); }
-    .legend-avg { background: var(--taxi-avg); }
-    .legend-max { background: var(--taxi-max); }
-
-    .table-panel {
-      display: none;
-      margin-top: 17px;
-    }
-
-    .table-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-
-    .record-count {
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .table-scroll {
-      max-height: 680px;
-      overflow: auto;
-      margin-top: 14px;
-      border-radius: 12px;
-    }
-
-    table {
-      width: 100%;
-      min-width: 1100px;
-      border-collapse: collapse;
-    }
-
-    th {
-      position: sticky;
-      top: 0;
-      z-index: 4;
-      padding: 15px 10px;
-      font-size: 13px;
-      text-align: center;
-      white-space: nowrap;
-      font-weight: 700;
-    }
-
-    td {
-      padding: 15px 10px;
-      text-align: center;
-      border-bottom: 1px solid rgba(255,255,255,.05);
-      font-size: 14px;
-      white-space: nowrap;
-    }
-
-    .outlier {
-      color: var(--red) !important;
-      font-weight: 700;
-    }
-
-    .no-data {
-      color: #65778d;
-    }
-
-    .dep-head { color: #90b7ff; }
-    .arr-head { color: #7ed8b7; }
-
-    .section-title-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .section-badge {
-      display: inline-flex;
-      align-items: center;
-      height: 24px;
-      padding: 0 9px;
-      border-radius: 999px;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: .8px;
-    }
-
-    /* Monthly Performance */
-    .monthly-panel-style {
-      background: linear-gradient(145deg, #14253d, #0d1c2e);
-      border: 1px solid rgba(95,168,255,.18);
-      box-shadow: inset 4px 0 0 var(--monthly-accent);
-    }
-
-    .monthly-panel-style .section-badge {
-      color: #d3e9ff;
-      background: rgba(95,168,255,.14);
-      border: 1px solid rgba(95,168,255,.22);
-    }
-
-    .monthly-panel-style th {
-      background: #16283f;
-      color: #afd0ee;
-    }
-
-    .monthly-panel-style td {
-      color: #d8e5f2;
-    }
-
-    .monthly-panel-style tbody tr:hover {
-      background: rgba(95,168,255,.07);
-    }
-
-    /* Flight History */
-    .history-panel-style {
-      background: linear-gradient(145deg, #0d1827, #081320);
-      border: 1px solid rgba(160,175,192,.11);
-      box-shadow: inset 4px 0 0 var(--history-accent);
-    }
-
-    .history-panel-style .section-badge {
-      color: #cbd5df;
-      background: rgba(123,138,160,.13);
-      border: 1px solid rgba(123,138,160,.18);
-    }
-
-    .history-panel-style th {
-      background: #0f1b2b;
-      color: #a2b1c0;
-    }
-
-    .history-panel-style td {
-      color: #d0dae5;
-    }
-
-    .history-panel-style tbody tr:hover {
-      background: rgba(145,160,178,.05);
-    }
-
-    .empty {
-      margin-top: 20px;
-      padding: 75px 20px;
-      text-align: center;
-      color: var(--muted);
-      border: 1px dashed rgba(255,255,255,.11);
-      border-radius: 17px;
-    }
-
-    @media(max-width:1200px) {
-      .kpi-grid { grid-template-columns: repeat(3, 1fr); }
-      .search-grid { grid-template-columns: repeat(3, 1fr); }
-      .route-arrow { display: none; }
-    }
-
-    @media(max-width:850px) {
-      .app { width: calc(100% - 18px); }
-      .search-grid { grid-template-columns: 1fr; }
-      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-      .taxi-grid { grid-template-columns: 1fr; }
-      .taxi-chart-wrap,
-      .flight-chart-wrap { height: 340px; }
-    }
-  </style>
+  >
+
+<style>
+
+/* =========================================================
+   THEME
+========================================================= */
+
+:root {
+  --bg: #07111e;
+  --panel: #101f34;
+  --line: rgba(255,255,255,.09);
+
+  --text: #f5f8fc;
+  --muted: #a0b1c6;
+
+  --blue: #4d8cff;
+  --cyan: #2ad6e5;
+  --green: #41d398;
+  --red: #ff627a;
+
+  /* Taxi chart only */
+  --taxi-min: #6fb7b2;
+  --taxi-avg: #d7a54c;
+  --taxi-max: #6388c6;
+
+  --taxi-min-text: #91d4cf;
+  --taxi-avg-text: #f0c66f;
+  --taxi-max-text: #91afe1;
+}
+
+
+/* =========================================================
+   GENERAL
+========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  color: var(--text);
+
+  background:
+    radial-gradient(
+      circle at 10% 0%,
+      rgba(70,120,255,.17),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 90% 5%,
+      rgba(28,208,222,.08),
+      transparent 27%
+    ),
+    linear-gradient(
+      180deg,
+      #07111e,
+      #091625
+    );
+}
+
+.app {
+  width: min(1600px, calc(100% - 32px));
+  margin: auto;
+  padding: 25px 0 60px;
+}
+
+
+/* =========================================================
+   TOP
+========================================================= */
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.brand {
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+
+  border-radius: 50%;
+  background: var(--green);
+}
+
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.hero {
+  padding: 28px 30px 30px;
+
+  border: 1px solid var(--line);
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #142945,
+      #09192c
+    );
+}
+
+.eyebrow {
+  color: var(--cyan);
+
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+}
+
+.hero-description {
+  margin-top: 9px;
+
+  color: var(--text);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.search-grid {
+  display: grid;
+
+  grid-template-columns:
+    1fr
+    46px
+    1fr
+    1fr
+    1fr
+    1fr
+    auto;
+
+  gap: 12px;
+
+  margin-top: 27px;
+  align-items: end;
+}
+
+.field label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.required-mark {
+  margin-left: 3px;
+  color: #ff7d91;
+}
+
+input,
+select {
+  width: 100%;
+  height: 49px;
+
+  padding: 0 14px;
+
+  border:
+    1px solid
+    rgba(255,255,255,.12);
+
+  border-radius: 10px;
+
+  background:
+    rgba(255,255,255,.055);
+
+  color: white;
+
+  font-family: inherit;
+  font-size: 15px;
+}
+
+select option {
+  background: #122137;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+
+  border-color: var(--blue);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(77,140,255,.10);
+}
+
+.route-arrow {
+  height: 49px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  color: var(--cyan);
+  font-size: 25px;
+}
+
+.search-btn {
+  height: 49px;
+
+  padding: 0 27px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #377cff,
+      #21bfdc
+    );
+
+  color: white;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    opacity .2s ease,
+    transform .2s ease;
+}
+
+.search-btn:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.search-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.loading {
+  display: none;
+
+  padding: 30px;
+
+  text-align: center;
+
+  color: var(--muted);
+  font-size: 16px;
+}
+
+
+/* =========================================================
+   ROUTE
+========================================================= */
+
+.route-header {
+  display: none;
+
+  margin: 29px 2px 15px;
+}
+
+.route-name {
+  font-size: 29px;
+  font-weight: 800;
+}
+
+.route-meta {
+  margin-top: 6px;
+
+  color: var(--muted);
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   KPI
+========================================================= */
+
+.kpi-grid {
+  display: none;
+
+  grid-template-columns:
+    repeat(5, 1fr);
+
+  gap: 13px;
+
+  margin-bottom: 18px;
+}
+
+.kpi {
+  min-height: 130px;
+
+  padding: 19px;
+
+  border: 1px solid var(--line);
+  border-radius: 15px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #13243b,
+      #0b192b
+    );
+}
+
+.kpi-label {
+  color: var(--muted);
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.kpi-value {
+  margin-top: 9px;
+
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.kpi-sub {
+  margin-top: 7px;
+
+  color: #8294aa;
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   PANEL
+========================================================= */
+
+.panel {
+  padding: 22px;
+
+  border: 1px solid var(--line);
+  border-radius: 17px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #112138,
+      #0a182a
+    );
+}
+
+.panel-title {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.panel-sub {
+  margin-top: 5px;
+
+  color: var(--muted);
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   FLIGHT CHART
+========================================================= */
+
+.flight-panel {
+  display: none;
+
+  margin-bottom: 16px;
+}
+
+.flight-chart-wrap {
+  position: relative;
+
+  height: 360px;
+
+  margin-top: 15px;
+}
+
+
+/* =========================================================
+   TAXI
+========================================================= */
+
+.taxi-grid {
+  display: none;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 16px;
+
+  margin-bottom: 16px;
+}
+
+.taxi-chart-wrap {
+  position: relative;
+
+  height: 405px;
+
+  margin-top: 15px;
+}
+
+.taxi-legend {
+  display: flex;
+
+  gap: 20px;
+
+  margin-top: 11px;
+
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.taxi-legend-item {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+}
+
+.taxi-color {
+  width: 12px;
+  height: 12px;
+
+  border-radius: 3px;
+}
+
+.taxi-color-min {
+  background: var(--taxi-min);
+}
+
+.taxi-color-avg {
+  background: var(--taxi-avg);
+}
+
+.taxi-color-max {
+  background: var(--taxi-max);
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.table-panel {
+  display: none;
+
+  margin-top: 18px;
+}
+
+.table-head {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 14px;
+}
+
+.table-scroll {
+  max-height: 680px;
+
+  margin-top: 15px;
+
+  overflow: auto;
+
+  border-radius: 11px;
+}
+
+table {
+  width: 100%;
+
+  min-width: 1100px;
+
+  border-collapse: collapse;
+}
+
+th {
+  position: sticky;
+
+  top: 0;
+
+  z-index: 4;
+
+  padding: 15px 10px;
+
+  color: #a2b2c6;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  text-align: center;
+  white-space: nowrap;
+}
+
+td {
+  padding: 15px 10px;
+
+  text-align: center;
+
+  color: #d4deea;
+
+  border-bottom:
+    1px solid
+    rgba(255,255,255,.05);
+
+  font-size: 14px;
+
+  white-space: nowrap;
+}
+
+.record-count {
+  color: var(--muted);
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.outlier {
+  color: var(--red) !important;
+
+  font-weight: 700;
+}
+
+.no-data {
+  color: #65778d;
+}
+
+.dep-head {
+  color: #98bdff;
+}
+
+.arr-head {
+  color: #79dbb6;
+}
+
+
+/* =========================================================
+   SECTION TITLE
+========================================================= */
+
+.section-title-row {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+.section-badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  height: 24px;
+
+  padding: 0 9px;
+
+  border-radius: 999px;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: .8px;
+}
+
+
+/* =========================================================
+   MONTHLY PERFORMANCE
+========================================================= */
+
+.monthly-panel-style {
+  background:
+    linear-gradient(
+      145deg,
+      #142742,
+      #0d1d31
+    );
+
+  border:
+    1px solid
+    rgba(77,140,255,.20);
+
+  box-shadow:
+    inset 4px 0 0
+    #4d8cff;
+}
+
+.monthly-panel-style .section-badge {
+  color: #d9e8ff;
+
+  background:
+    rgba(77,140,255,.15);
+
+  border:
+    1px solid
+    rgba(77,140,255,.25);
+}
+
+.monthly-panel-style .table-scroll {
+  border:
+    1px solid
+    rgba(77,140,255,.10);
+}
+
+.monthly-panel-style th {
+  background: #172c48;
+
+  color: #b6cae1;
+}
+
+.monthly-panel-style tbody tr:hover {
+  background:
+    rgba(77,140,255,.065);
+}
+
+
+/* =========================================================
+   FLIGHT HISTORY
+========================================================= */
+
+.history-panel-style {
+  margin-top: 25px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #0d1827,
+      #08131f
+    );
+
+  border:
+    1px solid
+    rgba(165,180,196,.10);
+
+  box-shadow:
+    inset 4px 0 0
+    #65778c;
+}
+
+.history-panel-style .section-badge {
+  color: #c7d0da;
+
+  background:
+    rgba(101,119,140,.15);
+
+  border:
+    1px solid
+    rgba(130,145,162,.18);
+}
+
+.history-panel-style .table-scroll {
+  border:
+    1px solid
+    rgba(150,165,180,.07);
+}
+
+.history-panel-style th {
+  background: #0f1c2c;
+
+  color: #9facba;
+}
+
+.history-panel-style td {
+  color: #c9d4df;
+}
+
+.history-panel-style tbody tr:hover {
+  background:
+    rgba(130,150,170,.045);
+}
+
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.empty {
+  margin-top: 20px;
+
+  padding: 75px 20px;
+
+  text-align: center;
+
+  color: var(--muted);
+
+  border:
+    1px dashed
+    rgba(255,255,255,.11);
+
+  border-radius: 17px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media(max-width:1200px) {
+
+  .kpi-grid {
+    grid-template-columns:
+      repeat(3,1fr);
+  }
+
+  .search-grid {
+    grid-template-columns:
+      repeat(3,1fr);
+  }
+
+  .route-arrow {
+    display: none;
+  }
+
+}
+
+
+@media(max-width:850px) {
+
+  .app {
+    width:
+      calc(100% - 18px);
+  }
+
+  .hero {
+    padding:
+      23px 18px;
+  }
+
+  .search-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .kpi-grid {
+    grid-template-columns:
+      repeat(2,1fr);
+  }
+
+  .taxi-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .taxi-chart-wrap,
+  .flight-chart-wrap {
+    height: 350px;
+  }
+
+  .section-title-row {
+    flex-wrap: wrap;
+  }
+
+}
+
+</style>
+
 </head>
 
+
 <body>
-  <div class="app">
 
-    <div class="topbar">
-      <div class="brand">✈ Flight Data Analysis</div>
+<div class="app">
 
-      <div class="status">
-        <span id="statusDot" class="status-dot"></span>
-        <span id="statusText">System Ready</span>
-      </div>
+
+<!-- =======================================================
+     HEADER
+======================================================= -->
+
+<div class="topbar">
+
+  <div class="brand">
+    ✈ Flight Data Analysis
+  </div>
+
+  <div class="status">
+
+    <span
+      id="statusDot"
+      class="status-dot"
+    ></span>
+
+    <span id="statusText">
+      System Ready
+    </span>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     SEARCH
+======================================================= -->
+
+<div class="hero">
+
+  <div class="eyebrow">
+    ROUTE ANALYTICS
+  </div>
+
+  <div class="hero-description">
+    Flight time and taxi performance analysis
+  </div>
+
+
+  <div class="search-grid">
+
+
+    <div class="field">
+
+      <label>
+        DEPARTURE
+        <span class="required-mark">*</span>
+      </label>
+
+      <input
+        id="dep"
+        maxlength="4"
+        placeholder="RKSS"
+        autocomplete="off"
+      >
+
     </div>
 
-    <div class="hero">
-      <div class="eyebrow">ROUTE ANALYTICS</div>
-      <div class="hero-description">Flight time and taxi performance analysis</div>
 
-      <div class="search-grid">
-        <div class="field">
-          <label>DEPARTURE <span class="required-mark">*</span></label>
-          <input id="dep" maxlength="4" placeholder="RKSS" autocomplete="off">
-        </div>
-
-        <div class="route-arrow">→</div>
-
-        <div class="field">
-          <label>ARRIVAL <span class="required-mark">*</span></label>
-          <input id="arr" maxlength="4" placeholder="PANC" autocomplete="off">
-        </div>
-
-        <div class="field">
-          <label>TAIL <span class="required-mark">*</span></label>
-          <select id="tail">
-            <option value="">SELECT TAIL</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label>FROM</label>
-          <input id="fromDate" type="date">
-        </div>
-
-        <div class="field">
-          <label>TO</label>
-          <input id="toDate" type="date">
-        </div>
-
-        <button id="analyzeBtn" class="search-btn" onclick="searchRoute()" disabled>
-          ANALYZE
-        </button>
-      </div>
+    <div class="route-arrow">
+      →
     </div>
 
-    <div id="loading" class="loading">Analyzing flight data...</div>
 
-    <div id="routeHeader" class="route-header">
-      <div id="routeName" class="route-name"></div>
-      <div id="routeMeta" class="route-meta"></div>
+    <div class="field">
+
+      <label>
+        ARRIVAL
+        <span class="required-mark">*</span>
+      </label>
+
+      <input
+        id="arr"
+        maxlength="4"
+        placeholder="PANC"
+        autocomplete="off"
+      >
+
     </div>
 
-    <div id="kpiGrid" class="kpi-grid">
-      <div class="kpi">
-        <div class="kpi-label">FLIGHTS</div>
-        <div id="kpiFlights" class="kpi-value">-</div>
-        <div class="kpi-sub">Historical records</div>
-      </div>
 
-      <div class="kpi">
-        <div class="kpi-label">AVG FLIGHT TIME</div>
-        <div id="kpiFlight" class="kpi-value">-</div>
-        <div id="kpiFlightSub" class="kpi-sub"></div>
-      </div>
+    <div class="field">
 
-      <div class="kpi">
-        <div class="kpi-label">AVG BLOCK TIME</div>
-        <div id="kpiBlock" class="kpi-value">-</div>
-        <div id="kpiBlockSub" class="kpi-sub"></div>
-      </div>
+      <label>
+        TAIL
+        <span class="required-mark">*</span>
+      </label>
 
-      <div class="kpi">
-        <div class="kpi-label">AVG DEP TAXI</div>
-        <div id="kpiDepTaxi" class="kpi-value">-</div>
-        <div id="kpiDepTaxiSub" class="kpi-sub"></div>
-      </div>
+      <select id="tail">
 
-      <div class="kpi">
-        <div class="kpi-label">AVG ARR TAXI</div>
-        <div id="kpiArrTaxi" class="kpi-value">-</div>
-        <div id="kpiArrTaxiSub" class="kpi-sub"></div>
-      </div>
+        <option value="">
+          SELECT TAIL
+        </option>
+
+      </select>
+
     </div>
 
-    <div id="flightPanel" class="panel flight-panel">
-      <div class="panel-title">Monthly Flight Time</div>
-      <div class="panel-sub">Historical average by calendar month · outliers excluded</div>
-      <div class="flight-chart-wrap">
-        <canvas id="flightChart"></canvas>
-      </div>
+
+    <div class="field">
+
+      <label>
+        FROM
+      </label>
+
+      <input
+        id="fromDate"
+        type="date"
+      >
+
     </div>
 
-    <div id="taxiGrid" class="taxi-grid">
-      <div class="panel">
-        <div class="panel-title">Monthly DEP Taxi</div>
-        <div class="panel-sub">Monthly MIN / AVG / MAX after outlier removal</div>
 
-        <div class="taxi-legend-note">
-          <div class="legend-item"><span class="legend-swatch legend-min"></span>MIN</div>
-          <div class="legend-item"><span class="legend-swatch legend-avg"></span>AVG</div>
-          <div class="legend-item"><span class="legend-swatch legend-max"></span>MAX</div>
-        </div>
+    <div class="field">
 
-        <div class="taxi-chart-wrap">
-          <canvas id="depTaxiChart"></canvas>
-        </div>
-      </div>
+      <label>
+        TO
+      </label>
 
-      <div class="panel">
-        <div class="panel-title">Monthly ARR Taxi</div>
-        <div class="panel-sub">Monthly MIN / AVG / MAX after outlier removal</div>
+      <input
+        id="toDate"
+        type="date"
+      >
 
-        <div class="taxi-legend-note">
-          <div class="legend-item"><span class="legend-swatch legend-min"></span>MIN</div>
-          <div class="legend-item"><span class="legend-swatch legend-avg"></span>AVG</div>
-          <div class="legend-item"><span class="legend-swatch legend-max"></span>MAX</div>
-        </div>
-
-        <div class="taxi-chart-wrap">
-          <canvas id="arrTaxiChart"></canvas>
-        </div>
-      </div>
     </div>
 
-    <div id="monthlyPanel" class="panel table-panel monthly-panel-style">
-      <div class="section-title-row">
-        <div class="panel-title">Monthly Performance</div>
-        <div class="section-badge">MONTHLY SUMMARY</div>
-      </div>
 
-      <div class="panel-sub">
-        Calendar-month historical averages · Taxi outliers removed per month
-      </div>
+    <button
+      id="analyzeBtn"
+      class="search-btn"
+      onclick="searchRoute()"
+      disabled
+    >
+      ANALYZE
+    </button>
 
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>MONTH</th>
-              <th>FLIGHTS</th>
-              <th>AVG FLT TIME</th>
-              <th>AVG BLOCK</th>
-              <th class="dep-head">DEP MIN</th>
-              <th class="dep-head">DEP AVG</th>
-              <th class="dep-head">DEP MAX</th>
-              <th class="arr-head">ARR MIN</th>
-              <th class="arr-head">ARR AVG</th>
-              <th class="arr-head">ARR MAX</th>
-            </tr>
-          </thead>
-          <tbody id="monthlyBody"></tbody>
-        </table>
-      </div>
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     LOADING
+======================================================= -->
+
+<div
+  id="loading"
+  class="loading"
+>
+  Analyzing flight data...
+</div>
+
+
+
+<!-- =======================================================
+     ROUTE
+======================================================= -->
+
+<div
+  id="routeHeader"
+  class="route-header"
+>
+
+  <div
+    id="routeName"
+    class="route-name"
+  ></div>
+
+  <div
+    id="routeMeta"
+    class="route-meta"
+  ></div>
+
+</div>
+
+
+
+<!-- =======================================================
+     KPI
+======================================================= -->
+
+<div
+  id="kpiGrid"
+  class="kpi-grid"
+>
+
+
+  <div class="kpi">
+
+    <div class="kpi-label">
+      FLIGHTS
     </div>
 
-    <div id="historyPanel" class="panel table-panel history-panel-style">
-      <div class="table-head">
-        <div>
-          <div class="section-title-row">
-            <div class="panel-title">Flight History</div>
-            <div class="section-badge">RAW RECORDS</div>
-          </div>
-          <div class="panel-sub">Individual historical route records</div>
-        </div>
-
-        <div id="recordCount" class="record-count"></div>
-      </div>
-
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>DATE</th>
-              <th>REQ</th>
-              <th>A/C TYPE</th>
-              <th>TAIL</th>
-              <th>FLT TIME</th>
-              <th>BLOCK</th>
-              <th>DEP TAXI</th>
-              <th>ARR TAXI</th>
-              <th>RAMP OUT FUEL</th>
-              <th>FOD</th>
-            </tr>
-          </thead>
-          <tbody id="historyBody"></tbody>
-        </table>
-      </div>
+    <div
+      id="kpiFlights"
+      class="kpi-value"
+    >
+      -
     </div>
 
-    <div id="empty" class="empty">
-      Departure, Arrival, Tail을 선택해주세요.
+    <div class="kpi-sub">
+      Historical records
     </div>
 
   </div>
 
-  <script>
-    const API_URL =
-      'https://script.google.com/macros/s/AKfycbyp8dbHDa9oNpI8nAGJ-ywHo-nv80uKirarLUhc_hIHy7YCXlZm_1C9oye6TqLFZ-no/exec';
 
-    Chart.register(ChartDataLabels);
-    Chart.defaults.color = '#9fb0c4';
-    Chart.defaults.font.family = 'Inter';
-    Chart.defaults.font.size = 13;
-    Chart.defaults.borderColor = 'rgba(255,255,255,.06)';
+  <div class="kpi">
 
-    let flightChart = null;
-    let depTaxiChart = null;
-    let arrTaxiChart = null;
-    let isLoading = false;
+    <div class="kpi-label">
+      AVG FLIGHT TIME
+    </div>
 
-    document.addEventListener('DOMContentLoaded', () => {
-      setupInputs();
-      loadTailOptions();
-      updateAnalyzeButton();
-    });
+    <div
+      id="kpiFlight"
+      class="kpi-value"
+    >
+      -
+    </div>
 
-    function setupInputs() {
-      ['dep', 'arr'].forEach(id => {
-        const el = document.getElementById(id);
+    <div
+      id="kpiFlightSub"
+      class="kpi-sub"
+    ></div>
 
-        el.addEventListener('input', () => {
-          el.value = el.value
-            .toUpperCase()
-            .replace(/[^A-Z0-9]/g, '')
-            .slice(0, 4);
+  </div>
+
+
+  <div class="kpi">
+
+    <div class="kpi-label">
+      AVG BLOCK TIME
+    </div>
+
+    <div
+      id="kpiBlock"
+      class="kpi-value"
+    >
+      -
+    </div>
+
+    <div
+      id="kpiBlockSub"
+      class="kpi-sub"
+    ></div>
+
+  </div>
+
+
+  <div class="kpi">
+
+    <div class="kpi-label">
+      AVG DEP TAXI
+    </div>
+
+    <div
+      id="kpiDepTaxi"
+      class="kpi-value"
+    >
+      -
+    </div>
+
+    <div
+      id="kpiDepTaxiSub"
+      class="kpi-sub"
+    ></div>
+
+  </div>
+
+
+  <div class="kpi">
+
+    <div class="kpi-label">
+      AVG ARR TAXI
+    </div>
+
+    <div
+      id="kpiArrTaxi"
+      class="kpi-value"
+    >
+      -
+    </div>
+
+    <div
+      id="kpiArrTaxiSub"
+      class="kpi-sub"
+    ></div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     FLIGHT TIME
+======================================================= -->
+
+<div
+  id="flightPanel"
+  class="panel flight-panel"
+>
+
+  <div class="panel-title">
+    Monthly Flight Time
+  </div>
+
+  <div class="panel-sub">
+    Historical average by calendar month · outliers excluded
+  </div>
+
+
+  <div class="flight-chart-wrap">
+
+    <canvas id="flightChart"></canvas>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     TAXI
+======================================================= -->
+
+<div
+  id="taxiGrid"
+  class="taxi-grid"
+>
+
+
+  <div class="panel">
+
+    <div
+      id="depTaxiTitle"
+      class="panel-title"
+    >
+      Monthly DEP Taxi
+    </div>
+
+    <div class="panel-sub">
+      Monthly MIN / AVG / MAX after outlier removal
+    </div>
+
+
+    <div class="taxi-legend">
+
+      <div class="taxi-legend-item">
+        <span class="taxi-color taxi-color-min"></span>
+        MIN
+      </div>
+
+      <div class="taxi-legend-item">
+        <span class="taxi-color taxi-color-avg"></span>
+        AVG
+      </div>
+
+      <div class="taxi-legend-item">
+        <span class="taxi-color taxi-color-max"></span>
+        MAX
+      </div>
+
+    </div>
+
+
+    <div class="taxi-chart-wrap">
+
+      <canvas id="depTaxiChart"></canvas>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="panel">
+
+    <div
+      id="arrTaxiTitle"
+      class="panel-title"
+    >
+      Monthly ARR Taxi
+    </div>
+
+    <div class="panel-sub">
+      Monthly MIN / AVG / MAX after outlier removal
+    </div>
+
+
+    <div class="taxi-legend">
+
+      <div class="taxi-legend-item">
+        <span class="taxi-color taxi-color-min"></span>
+        MIN
+      </div>
+
+      <div class="taxi-legend-item">
+        <span class="taxi-color taxi-color-avg"></span>
+        AVG
+      </div>
+
+      <div class="taxi-legend-item">
+        <span class="taxi-color taxi-color-max"></span>
+        MAX
+      </div>
+
+    </div>
+
+
+    <div class="taxi-chart-wrap">
+
+      <canvas id="arrTaxiChart"></canvas>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     MONTHLY PERFORMANCE
+======================================================= -->
+
+<div
+  id="monthlyPanel"
+  class="panel table-panel monthly-panel-style"
+>
+
+  <div class="section-title-row">
+
+    <div class="panel-title">
+      Monthly Performance
+    </div>
+
+    <div class="section-badge">
+      MONTHLY SUMMARY
+    </div>
+
+  </div>
+
+
+  <div class="panel-sub">
+    Calendar-month performance · Taxi outliers removed per month
+  </div>
+
+
+  <div class="table-scroll">
+
+    <table>
+
+      <thead>
+
+        <tr>
+
+          <th>MONTH</th>
+
+          <th>FLIGHTS</th>
+
+          <th>AVG FLT TIME</th>
+
+          <th>AVG BLOCK</th>
+
+          <th class="dep-head">
+            DEP MIN
+          </th>
+
+          <th class="dep-head">
+            DEP AVG
+          </th>
+
+          <th class="dep-head">
+            DEP MAX
+          </th>
+
+          <th class="arr-head">
+            ARR MIN
+          </th>
+
+          <th class="arr-head">
+            ARR AVG
+          </th>
+
+          <th class="arr-head">
+            ARR MAX
+          </th>
+
+        </tr>
+
+      </thead>
+
+
+      <tbody id="monthlyBody"></tbody>
+
+    </table>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     HISTORY
+======================================================= -->
+
+<div
+  id="historyPanel"
+  class="panel table-panel history-panel-style"
+>
+
+  <div class="table-head">
+
+    <div>
+
+      <div class="section-title-row">
+
+        <div class="panel-title">
+          Flight History
+        </div>
+
+        <div class="section-badge">
+          RAW RECORDS
+        </div>
+
+      </div>
+
+
+      <div class="panel-sub">
+        Individual historical route records
+      </div>
+
+    </div>
+
+
+    <div
+      id="recordCount"
+      class="record-count"
+    ></div>
+
+  </div>
+
+
+  <div class="table-scroll">
+
+    <table>
+
+      <thead>
+
+        <tr>
+
+          <th>DATE</th>
+
+          <th>REQ</th>
+
+          <th>A/C TYPE</th>
+
+          <th>TAIL</th>
+
+          <th>FLT TIME</th>
+
+          <th>BLOCK</th>
+
+          <th>DEP TAXI</th>
+
+          <th>ARR TAXI</th>
+
+          <th>RAMP OUT FUEL</th>
+
+          <th>FOD</th>
+
+        </tr>
+
+      </thead>
+
+
+      <tbody id="historyBody"></tbody>
+
+    </table>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     EMPTY
+======================================================= -->
+
+<div
+  id="empty"
+  class="empty"
+>
+  Departure, Arrival, Tail을 선택해주세요.
+</div>
+
+
+</div>
+
+
+
+<script>
+
+/* =========================================================
+   API
+========================================================= */
+
+const API_URL =
+  'https://script.google.com/macros/s/AKfycbyp8dbHDa9oNpI8nAGJ-ywHo-nv80uKirarLUhc_hIHy7YCXlZm_1C9oye6TqLFZ-no/exec';
+
+
+/* =========================================================
+   CHART DEFAULT
+========================================================= */
+
+Chart.register(
+  ChartDataLabels
+);
+
+
+Chart.defaults.color =
+  '#9fb0c4';
+
+
+Chart.defaults.font.family =
+  'Inter';
+
+
+Chart.defaults.font.size =
+  13;
+
+
+Chart.defaults.borderColor =
+  'rgba(255,255,255,.06)';
+
+
+let flightChart =
+  null;
+
+
+let depTaxiChart =
+  null;
+
+
+let arrTaxiChart =
+  null;
+
+
+let isLoading =
+  false;
+
+
+/* =========================================================
+   TAXI BOUNDARY LABEL PLUGIN
+
+   MIN / AVG / MAX의 실제 높이 오른쪽에 숫자를 표시.
+   서로 너무 가까우면 자동으로 간격을 벌림.
+========================================================= */
+
+const taxiBoundaryLabels = {
+
+  id:
+    'taxiBoundaryLabels',
+
+
+  afterDatasetsDraw(
+    chart,
+    args,
+    options
+  ) {
+
+    if (
+      !options ||
+      !options.enabled
+    ) {
+
+      return;
+
+    }
+
+
+    const rows =
+      options.rows ||
+      [];
+
+
+    const mode =
+      options.mode;
+
+
+    const isDep =
+      mode === 'DEP';
+
+
+    const yScale =
+      chart.scales.y;
+
+
+    const meta =
+      chart.getDatasetMeta(
+        0
+      );
+
+
+    const area =
+      chart.chartArea;
+
+
+    if (
+      !yScale ||
+      !meta ||
+      !area
+    ) {
+
+      return;
+
+    }
+
+
+    const ctx =
+      chart.ctx;
+
+
+    rows.forEach(
+      (
+        row,
+        index
+      ) => {
+
+        const bar =
+          meta.data[
+            index
+          ];
+
+
+        if (!bar) {
+
+          return;
+
+        }
+
+
+        const min =
+          numericOrNull(
+            isDep
+              ? row.depTaxiMin
+              : row.arrTaxiMin
+          );
+
+
+        const avg =
+          numericOrNull(
+            isDep
+              ? row.avgDepTaxi
+              : row.avgArrTaxi
+          );
+
+
+        const max =
+          numericOrNull(
+            isDep
+              ? row.depTaxiMax
+              : row.arrTaxiMax
+          );
+
+
+        if (
+          min === null ||
+          avg === null ||
+          max === null
+        ) {
+
+          return;
+
+        }
+
+
+        /*
+         * 위에서 아래 순서
+         * MAX / AVG / MIN
+         */
+        const labels = [
+
+          {
+            value:
+              max,
+
+            y:
+              yScale.getPixelForValue(
+                max
+              ),
+
+            color:
+              '#91afe1'
+          },
+
+          {
+            value:
+              avg,
+
+            y:
+              yScale.getPixelForValue(
+                avg
+              ),
+
+            color:
+              '#f0c66f'
+          },
+
+          {
+            value:
+              min,
+
+            y:
+              yScale.getPixelForValue(
+                min
+              ),
+
+            color:
+              '#91d4cf'
+          }
+
+        ];
+
+
+        /*
+         * 라벨 사이 최소 pixel 간격
+         */
+        const minGap =
+          13;
+
+
+        for (
+          let i = 1;
+          i < labels.length;
+          i++
+        ) {
+
+          if (
+            labels[i].y -
+            labels[i - 1].y <
+            minGap
+          ) {
+
+            labels[i].y =
+              labels[i - 1].y +
+              minGap;
+
+          }
+
+        }
+
+
+        /*
+         * 아래로 넘치면 전체 위로 이동
+         */
+        const bottomLimit =
+          area.bottom -
+          5;
+
+
+        const bottomOverflow =
+          labels[
+            labels.length - 1
+          ].y -
+          bottomLimit;
+
+
+        if (
+          bottomOverflow >
+          0
+        ) {
+
+          labels.forEach(
+            item =>
+              item.y -=
+              bottomOverflow
+          );
+
+        }
+
+
+        /*
+         * 위로 넘치면 전체 아래로 이동
+         */
+        const topLimit =
+          area.top +
+          5;
+
+
+        const topOverflow =
+          topLimit -
+          labels[0].y;
+
+
+        if (
+          topOverflow >
+          0
+        ) {
+
+          labels.forEach(
+            item =>
+              item.y +=
+              topOverflow
+          );
+
+        }
+
+
+        const barWidth =
+          bar.width ||
+          32;
+
+
+        const labelX =
+          bar.x +
+          barWidth / 2 +
+          5;
+
+
+        ctx.save();
+
+
+        ctx.font =
+          '700 10px Inter';
+
+
+        ctx.textAlign =
+          'left';
+
+
+        ctx.textBaseline =
+          'middle';
+
+
+        labels.forEach(
+          item => {
+
+            const text =
+              compactMinute(
+                item.value
+              );
+
+
+            const width =
+              ctx.measureText(
+                text
+              ).width;
+
+
+            /*
+             * 아주 약한 배경을 깔아 grid와 분리
+             */
+            ctx.fillStyle =
+              'rgba(7,17,30,.78)';
+
+
+            ctx.fillRect(
+              labelX - 2,
+              item.y - 7,
+              width + 5,
+              14
+            );
+
+
+            ctx.fillStyle =
+              item.color;
+
+
+            ctx.fillText(
+              text,
+              labelX,
+              item.y
+            );
+
+          }
+        );
+
+
+        ctx.restore();
+
+      }
+    );
+
+  }
+
+};
+
+
+Chart.register(
+  taxiBoundaryLabels
+);
+
+
+/* =========================================================
+   INIT
+========================================================= */
+
+document.addEventListener(
+  'DOMContentLoaded',
+  () => {
+
+    setupInputs();
+
+    loadTailOptions();
+
+    updateAnalyzeButton();
+
+  }
+);
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+function setupInputs() {
+
+  [
+    'dep',
+    'arr'
+  ]
+  .forEach(
+    id => {
+
+      const el =
+        document
+          .getElementById(
+            id
+          );
+
+
+      el.addEventListener(
+        'input',
+        () => {
+
+          el.value =
+            el.value
+              .toUpperCase()
+              .replace(
+                /[^A-Z0-9]/g,
+                ''
+              )
+              .slice(
+                0,
+                4
+              );
+
 
           updateAnalyzeButton();
-        });
 
-        el.addEventListener('keydown', event => {
-          if (event.key === 'Enter' && isSearchReady() && !isLoading) {
+        }
+      );
+
+
+      el.addEventListener(
+        'keydown',
+        event => {
+
+          if (
+            event.key ===
+              'Enter' &&
+            isSearchReady() &&
+            !isLoading
+          ) {
+
             searchRoute();
+
           }
+
+        }
+      );
+
+    }
+  );
+
+
+  document
+    .getElementById(
+      'tail'
+    )
+    .addEventListener(
+      'change',
+      updateAnalyzeButton
+    );
+
+}
+
+
+/* =========================================================
+   REQUIRED CHECK
+========================================================= */
+
+function isSearchReady() {
+
+  const dep =
+    valueOf(
+      'dep'
+    );
+
+
+  const arr =
+    valueOf(
+      'arr'
+    );
+
+
+  const tail =
+    valueOf(
+      'tail'
+    );
+
+
+  return (
+    dep.length === 4 &&
+    arr.length === 4 &&
+    tail !== ''
+  );
+
+}
+
+
+function updateAnalyzeButton() {
+
+  document
+    .getElementById(
+      'analyzeBtn'
+    )
+    .disabled =
+      isLoading ||
+      !isSearchReady();
+
+}
+
+
+/* =========================================================
+   JSONP
+========================================================= */
+
+function jsonp(
+  params
+) {
+
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
+
+      const callback =
+        '__flight_' +
+        Date.now() +
+        '_' +
+        Math.floor(
+          Math.random() *
+          100000
+        );
+
+
+      const script =
+        document
+          .createElement(
+            'script'
+          );
+
+
+      const query =
+        new URLSearchParams({
+
+          ...params,
+
+          callback:
+            callback
+
         });
-      });
 
-      document.getElementById('tail').addEventListener('change', updateAnalyzeButton);
-    }
 
-    function isSearchReady() {
-      const dep = valueOf('dep');
-      const arr = valueOf('arr');
-      const tail = valueOf('tail');
+      script.src =
+        API_URL +
+        '?' +
+        query.toString();
 
-      return dep.length === 4 && arr.length === 4 && tail !== '';
-    }
 
-    function updateAnalyzeButton() {
-      document.getElementById('analyzeBtn').disabled =
-        isLoading || !isSearchReady();
-    }
+      const timer =
+        setTimeout(
+          () => {
 
-    function jsonp(params) {
-      return new Promise((resolve, reject) => {
-        const callback =
-          '__flight_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+            cleanup();
 
-        const script = document.createElement('script');
-        const query = new URLSearchParams({ ...params, callback });
 
-        script.src = API_URL + '?' + query.toString();
+            reject(
+              new Error(
+                'API request timeout'
+              )
+            );
 
-        const timer = setTimeout(() => {
-          cleanup();
-          reject(new Error('API request timeout'));
-        }, 25000);
+          },
+          25000
+        );
 
-        function cleanup() {
-          clearTimeout(timer);
-          delete window[callback];
-          if (script.parentNode) script.remove();
+
+      function cleanup() {
+
+        clearTimeout(
+          timer
+        );
+
+
+        delete window[
+          callback
+        ];
+
+
+        if (
+          script.parentNode
+        ) {
+
+          script.remove();
+
         }
 
-        window[callback] = data => {
+      }
+
+
+      window[
+        callback
+      ] =
+        data => {
+
           cleanup();
-          resolve(data);
+
+          resolve(
+            data
+          );
+
         };
 
-        script.onerror = () => {
+
+      script.onerror =
+        () => {
+
           cleanup();
-          reject(new Error('API connection failed'));
+
+          reject(
+            new Error(
+              'API connection failed'
+            )
+          );
+
         };
 
-        document.body.appendChild(script);
+
+      document.body
+        .appendChild(
+          script
+        );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   TAIL LIST
+========================================================= */
+
+async function loadTailOptions() {
+
+  try {
+
+    const data =
+      await jsonp({
+
+        action:
+          'tails'
+
       });
+
+
+    if (
+      !data.ok
+    ) {
+
+      return;
+
     }
 
-    async function loadTailOptions() {
-      try {
-        const data = await jsonp({ action: 'tails' });
-        if (!data.ok) return;
 
-        const select = document.getElementById('tail');
+    const select =
+      document
+        .getElementById(
+          'tail'
+        );
 
-        (data.tails || []).forEach(tail => {
-          const option = document.createElement('option');
-          option.value = tail;
-          option.textContent = tail;
-          select.appendChild(option);
-        });
 
-        updateAnalyzeButton();
-      } catch (err) {
-        console.error(err);
-      }
-    }
+    (
+      data.tails ||
+      []
+    )
+      .forEach(
+        tail => {
 
-    async function searchRoute() {
-      const dep = valueOf('dep').toUpperCase();
-      const arr = valueOf('arr').toUpperCase();
-      const tail = valueOf('tail');
+          const option =
+            document
+              .createElement(
+                'option'
+              );
 
-      if (dep.length !== 4) {
-        alert('Departure ICAO를 입력해주세요.');
-        return;
-      }
 
-      if (arr.length !== 4) {
-        alert('Arrival ICAO를 입력해주세요.');
-        return;
-      }
+          option.value =
+            tail;
 
-      if (!tail) {
-        alert('TAIL을 선택해주세요.');
-        return;
-      }
 
-      hideResults();
-      document.getElementById('empty').style.display = 'none';
-      setLoading(true);
+          option.textContent =
+            tail;
 
-      try {
-        const data = await jsonp({
-          action: 'search',
+
+          select.appendChild(
+            option
+          );
+
+        }
+      );
+
+
+    updateAnalyzeButton();
+
+
+  } catch(err) {
+
+    console.error(
+      err
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+async function searchRoute() {
+
+  const dep =
+    valueOf(
+      'dep'
+    )
+      .toUpperCase();
+
+
+  const arr =
+    valueOf(
+      'arr'
+    )
+      .toUpperCase();
+
+
+  const tail =
+    valueOf(
+      'tail'
+    );
+
+
+  if (
+    dep.length !==
+    4
+  ) {
+
+    alert(
+      'Departure ICAO를 입력해주세요.'
+    );
+
+    return;
+
+  }
+
+
+  if (
+    arr.length !==
+    4
+  ) {
+
+    alert(
+      'Arrival ICAO를 입력해주세요.'
+    );
+
+    return;
+
+  }
+
+
+  if (!tail) {
+
+    alert(
+      'TAIL을 선택해주세요.'
+    );
+
+    return;
+
+  }
+
+
+  hideResults();
+
+
+  document
+    .getElementById(
+      'empty'
+    )
+    .style.display =
+      'none';
+
+
+  setLoading(
+    true
+  );
+
+
+  try {
+
+    const data =
+      await jsonp({
+
+        action:
+          'search',
+
+        dep:
           dep,
+
+        arr:
           arr,
+
+        tail:
           tail,
-          fromDate: valueOf('fromDate'),
-          toDate: valueOf('toDate')
-        });
 
-        if (!data.ok) {
-          throw new Error(data.error || 'Backend Error');
-        }
+        fromDate:
+          valueOf(
+            'fromDate'
+          ),
 
-        renderAll(data);
-      } catch (err) {
-        console.error(err);
+        toDate:
+          valueOf(
+            'toDate'
+          )
 
-        const empty = document.getElementById('empty');
-        empty.style.display = 'block';
-        empty.textContent = '데이터 조회 중 오류가 발생했습니다.';
+      });
 
-        alert(err.message);
-      } finally {
-        setLoading(false);
-      }
+
+    if (
+      !data.ok
+    ) {
+
+      throw new Error(
+        data.error ||
+        'Backend Error'
+      );
+
     }
 
-    function renderAll(data) {
-      const history = data.history || [];
-      const monthly = data.monthly || [];
 
-      if (!history.length) {
-        hideResults();
+    renderAll(
+      data
+    );
 
-        const empty = document.getElementById('empty');
-        empty.style.display = 'block';
-        empty.textContent = '조회된 운항 기록이 없습니다.';
-        return;
-      }
 
-      document.getElementById('empty').style.display = 'none';
-      showResults();
+  } catch(err) {
 
-      setText('routeName', data.route);
+    console.error(
+      err
+    );
 
-      const tailText =
-        data.filters && data.filters.tail ? data.filters.tail : '-';
 
-      setText('routeMeta', `${history.length} flights · ${tailText}`);
+    const empty =
+      document
+        .getElementById(
+          'empty'
+        );
 
-      renderKPI(data.summary);
-      renderFlightChart(monthly);
-      renderTaxiRangeChart(monthly, 'DEP');
-      renderTaxiRangeChart(monthly, 'ARR');
-      renderMonthlyTable(monthly);
-      renderHistory(history);
-    }
 
-    function renderKPI(summary) {
-      setText('kpiFlights', number(summary.flights));
+    empty.style.display =
+      'block';
 
-      setText('kpiFlight', summary.avgFlightTime || '-');
-      setText(
-        'kpiFlightSub',
-        `${summary.flightSamples || 0} used · ${summary.flightOutliers || 0} excluded`
-      );
 
-      setText('kpiBlock', summary.avgBlockTime || '-');
-      setText(
-        'kpiBlockSub',
-        `${summary.blockSamples || 0} used · ${summary.blockOutliers || 0} excluded`
-      );
+    empty.textContent =
+      '데이터 조회 중 오류가 발생했습니다.';
 
-      setText('kpiDepTaxi', minute(summary.avgDepTaxi));
-      setText(
-        'kpiDepTaxiSub',
-        `${summary.depTaxiSamples || 0} used · ${summary.depTaxiOutliers || 0} excluded`
-      );
 
-      setText('kpiArrTaxi', minute(summary.avgArrTaxi));
-      setText(
-        'kpiArrTaxiSub',
-        `${summary.arrTaxiSamples || 0} used · ${summary.arrTaxiOutliers || 0} excluded`
-      );
-    }
+    alert(
+      err.message
+    );
 
-    function renderFlightChart(rows) {
-      if (flightChart) flightChart.destroy();
 
-      flightChart = new Chart(document.getElementById('flightChart'), {
-        type: 'line',
+  } finally {
+
+    setLoading(
+      false
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   RENDER
+========================================================= */
+
+function renderAll(
+  data
+) {
+
+  const history =
+    data.history ||
+    [];
+
+
+  const monthly =
+    data.monthly ||
+    [];
+
+
+  if (
+    !history.length
+  ) {
+
+    hideResults();
+
+
+    const empty =
+      document
+        .getElementById(
+          'empty'
+        );
+
+
+    empty.style.display =
+      'block';
+
+
+    empty.textContent =
+      '조회된 운항 기록이 없습니다.';
+
+
+    return;
+
+  }
+
+
+  document
+    .getElementById(
+      'empty'
+    )
+    .style.display =
+      'none';
+
+
+  showResults();
+
+
+  setText(
+    'routeName',
+    data.route
+  );
+
+
+  const dep =
+    data.filters &&
+    data.filters.dep
+      ? data.filters.dep
+      : valueOf(
+          'dep'
+        );
+
+
+  const arr =
+    data.filters &&
+    data.filters.arr
+      ? data.filters.arr
+      : valueOf(
+          'arr'
+        );
+
+
+  const tail =
+    data.filters &&
+    data.filters.tail
+      ? data.filters.tail
+      : valueOf(
+          'tail'
+        );
+
+
+  /*
+   * Taxi 제목 ICAO 표시
+   */
+  setText(
+    'depTaxiTitle',
+    `Monthly DEP Taxi (${dep})`
+  );
+
+
+  setText(
+    'arrTaxiTitle',
+    `Monthly ARR Taxi (${arr})`
+  );
+
+
+  setText(
+    'routeMeta',
+    `${history.length} flights · ${tail}`
+  );
+
+
+  renderKPI(
+    data.summary
+  );
+
+
+  renderFlightChart(
+    monthly
+  );
+
+
+  renderTaxiRangeChart(
+    monthly,
+    'DEP'
+  );
+
+
+  renderTaxiRangeChart(
+    monthly,
+    'ARR'
+  );
+
+
+  renderMonthlyTable(
+    monthly
+  );
+
+
+  renderHistory(
+    history
+  );
+
+}
+
+
+/* =========================================================
+   KPI
+========================================================= */
+
+function renderKPI(
+  summary
+) {
+
+  setText(
+    'kpiFlights',
+    number(
+      summary.flights
+    )
+  );
+
+
+  setText(
+    'kpiFlight',
+    summary.avgFlightTime ||
+    '-'
+  );
+
+
+  setText(
+
+    'kpiFlightSub',
+
+    `${summary.flightSamples || 0} used · ` +
+    `${summary.flightOutliers || 0} excluded`
+
+  );
+
+
+  setText(
+    'kpiBlock',
+    summary.avgBlockTime ||
+    '-'
+  );
+
+
+  setText(
+
+    'kpiBlockSub',
+
+    `${summary.blockSamples || 0} used · ` +
+    `${summary.blockOutliers || 0} excluded`
+
+  );
+
+
+  setText(
+    'kpiDepTaxi',
+    minute(
+      summary.avgDepTaxi
+    )
+  );
+
+
+  setText(
+
+    'kpiDepTaxiSub',
+
+    `${summary.depTaxiSamples || 0} used · ` +
+    `${summary.depTaxiOutliers || 0} excluded`
+
+  );
+
+
+  setText(
+    'kpiArrTaxi',
+    minute(
+      summary.avgArrTaxi
+    )
+  );
+
+
+  setText(
+
+    'kpiArrTaxiSub',
+
+    `${summary.arrTaxiSamples || 0} used · ` +
+    `${summary.arrTaxiOutliers || 0} excluded`
+
+  );
+
+}
+
+
+/* =========================================================
+   FLIGHT TIME CHART
+========================================================= */
+
+function renderFlightChart(
+  rows
+) {
+
+  if (
+    flightChart
+  ) {
+
+    flightChart.destroy();
+
+  }
+
+
+  flightChart =
+    new Chart(
+      document
+        .getElementById(
+          'flightChart'
+        ),
+      {
+
+        type:
+          'line',
+
+
         data: {
-          labels: rows.map(row => row.label),
-          datasets: [{
-            label: 'Flight Time',
-            data: rows.map(row => row.avgFlightMinutes),
-            borderColor: '#7ea6d1',
-            backgroundColor: 'rgba(126,166,209,.14)',
-            pointBackgroundColor: '#8ab1d8',
-            pointBorderColor: '#07111e',
-            pointBorderWidth: 2,
-            borderWidth: 3,
-            pointRadius: 5,
-            pointHoverRadius: 8,
-            fill: true,
-            tension: .28,
-            spanGaps: false
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          layout: { padding: { top: 30 } },
-          plugins: {
-            legend: { display: false },
-            datalabels: {
-              display: context => {
-                const value = context.dataset.data[context.dataIndex];
-                return value !== null && value !== undefined;
-              },
-              color: '#dce8ff',
-              anchor: 'end',
-              align: 'top',
-              offset: 5,
-              font: { size: 13, weight: '700' },
-              formatter: value => minToHHMM(value)
-            },
-            tooltip: {
-              callbacks: {
-                label: context => {
-                  const row = rows[context.dataIndex];
-                  return [
-                    'Avg Flight: ' + minToHHMM(context.raw),
-                    'Flights: ' + row.flights
-                  ];
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: {
-                autoSkip: false,
-                maxRotation: 0,
-                minRotation: 0,
-                font: { size: 13, weight: '600' }
-              }
-            },
-            y: {
-              grid: { color: 'rgba(255,255,255,.05)' },
-              ticks: {
-                callback: value => minToHHMM(value),
-                font: { size: 13 }
-              }
-            }
-          }
-        }
-      });
-    }
 
-    /* ------------------------------
-       TAXI RANGE BAR
-       1 bar = MIN / AVG / MAX
-    ------------------------------ */
+          labels:
+            rows.map(
+              row =>
+                row.label
+            ),
 
-    function renderTaxiRangeChart(rows, mode) {
-      const isDep = mode === 'DEP';
-      const canvasId = isDep ? 'depTaxiChart' : 'arrTaxiChart';
 
-      if (isDep) {
-        if (depTaxiChart) depTaxiChart.destroy();
-      } else {
-        if (arrTaxiChart) arrTaxiChart.destroy();
-      }
-
-      const getMin = row => isDep ? row.depTaxiMin : row.arrTaxiMin;
-      const getAvg = row => isDep ? row.avgDepTaxi : row.avgArrTaxi;
-      const getMax = row => isDep ? row.depTaxiMax : row.arrTaxiMax;
-
-      const minData = rows.map(row => numericOrNull(getMin(row)));
-
-      const avgRange = rows.map(row => {
-        const min = numericOrNull(getMin(row));
-        const avg = numericOrNull(getAvg(row));
-        if (min === null || avg === null) return null;
-        return Math.max(0, avg - min);
-      });
-
-      const maxRange = rows.map(row => {
-        const avg = numericOrNull(getAvg(row));
-        const max = numericOrNull(getMax(row));
-        if (avg === null || max === null) return null;
-        return Math.max(0, max - avg);
-      });
-
-      const chart = new Chart(document.getElementById(canvasId), {
-        type: 'bar',
-        data: {
-          labels: rows.map(row => row.label),
           datasets: [
+
             {
-              label: 'MIN',
-              data: minData,
-              backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--taxi-min').trim(),
-              borderWidth: 0,
-              borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 6, bottomRight: 6 },
-              stack: 'taxi',
-              maxBarThickness: 44
-            },
-            {
-              label: 'AVG',
-              data: avgRange,
-              backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--taxi-avg').trim(),
-              borderWidth: 0,
-              borderRadius: 0,
-              stack: 'taxi',
-              maxBarThickness: 44
-            },
-            {
-              label: 'MAX',
-              data: maxRange,
-              backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--taxi-max').trim(),
-              borderWidth: 0,
-              borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
-              stack: 'taxi',
-              maxBarThickness: 44
+
+              label:
+                'Flight Time',
+
+              data:
+                rows.map(
+                  row =>
+                    row.avgFlightMinutes
+                ),
+
+              borderColor:
+                '#7ea6d1',
+
+              backgroundColor:
+                'rgba(126,166,209,.14)',
+
+              pointBackgroundColor:
+                '#8ab1d8',
+
+              pointBorderColor:
+                '#07111e',
+
+              pointBorderWidth:
+                2,
+
+              borderWidth:
+                3,
+
+              pointRadius:
+                5,
+
+              pointHoverRadius:
+                8,
+
+              fill:
+                true,
+
+              tension:
+                .28,
+
+              spanGaps:
+                false
+
             }
+
           ]
+
         },
+
+
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
+
+          responsive:
+            true,
+
+          maintainAspectRatio:
+            false,
+
+
           layout: {
-            padding: { top: 16, left: 5, right: 8 }
+
+            padding: {
+
+              top:
+                30
+
+            }
+
           },
+
+
           plugins: {
-            legend: { display: false },
+
+            legend: {
+
+              display:
+                false
+
+            },
+
+
             datalabels: {
-              display: context => shouldShowTaxiLabel(context, rows, mode),
-              color: context => {
-                if (context.datasetIndex === 0) return '#1a2430';
-                if (context.datasetIndex === 1) return '#f7fbff';
-                return '#ffffff';
-              },
-              anchor: 'center',
-              align: 'center',
-              clamp: true,
-              clip: false,
+
+              display:
+                context => {
+
+                  const value =
+                    context
+                      .dataset
+                      .data[
+                        context.dataIndex
+                      ];
+
+
+                  return (
+                    value !== null &&
+                    value !== undefined
+                  );
+
+                },
+
+
+              color:
+                '#dce8ff',
+
+              anchor:
+                'end',
+
+              align:
+                'top',
+
+              offset:
+                5,
+
               font: {
-                size: 11,
-                weight: '800'
+
+                size:
+                  13,
+
+                weight:
+                  '700'
+
               },
-              formatter: (value, context) => {
-                const row = rows[context.dataIndex];
-                const actual =
-                  context.datasetIndex === 0 ? getMin(row) :
-                  context.datasetIndex === 1 ? getAvg(row) :
-                  getMax(row);
 
-                return compactMinute(actual);
-              }
+
+              formatter:
+                value =>
+                  minToHHMM(
+                    value
+                  )
+
             },
+
+
             tooltip: {
+
+              backgroundColor:
+                '#101e33',
+
               callbacks: {
-                label: () => null,
-                afterBody: items => {
-                  if (!items.length) return [];
 
-                  const index = items[0].dataIndex;
-                  const row = rows[index];
+                label:
+                  context => {
 
-                  const total = isDep ? row.depTaxiTotal : row.arrTaxiTotal;
-                  const used = isDep ? row.depTaxiSamples : row.arrTaxiSamples;
-                  const excluded = isDep ? row.depTaxiOutliers : row.arrTaxiOutliers;
+                    const row =
+                      rows[
+                        context.dataIndex
+                      ];
 
-                  return [
-                    `${mode} Taxi`,
-                    `MIN: ${minute(getMin(row))}`,
-                    `AVG: ${minute(getAvg(row))}`,
-                    `MAX: ${minute(getMax(row))}`,
-                    '',
-                    `Total samples: ${total || 0}`,
-                    `Used: ${used || 0}`,
-                    `Excluded: ${excluded || 0}`
-                  ];
-                }
+
+                    return [
+
+                      'Avg Flight: ' +
+                      minToHHMM(
+                        context.raw
+                      ),
+
+                      'Flights: ' +
+                      row.flights
+
+                    ];
+
+                  }
+
               }
+
             }
+
           },
+
+
           scales: {
+
             x: {
-              stacked: true,
-              grid: { display: false },
+
+              grid: {
+
+                display:
+                  false
+
+              },
+
               ticks: {
-                autoSkip: false,
-                maxRotation: 0,
-                minRotation: 0,
-                font: { size: 12, weight: '600' }
+
+                autoSkip:
+                  false,
+
+                maxRotation:
+                  0,
+
+                minRotation:
+                  0,
+
+                font: {
+
+                  size:
+                    13,
+
+                  weight:
+                    '600'
+
+                }
+
               }
+
             },
+
+
             y: {
-              stacked: true,
-              beginAtZero: true,
-              grid: { color: 'rgba(255,255,255,.05)' },
+
+              grid: {
+
+                color:
+                  'rgba(255,255,255,.05)'
+
+              },
+
               ticks: {
-                callback: value => value + 'm',
-                font: { size: 13 }
+
+                callback:
+                  value =>
+                    minToHHMM(
+                      value
+                    ),
+
+                font: {
+
+                  size:
+                    13
+
+                }
+
               }
+
             }
+
           }
+
         }
-      });
 
-      if (isDep) {
-        depTaxiChart = chart;
-      } else {
-        arrTaxiChart = chart;
       }
+    );
+
+}
+
+
+/* =========================================================
+   TAXI RANGE CHART
+========================================================= */
+
+function renderTaxiRangeChart(
+  rows,
+  mode
+) {
+
+  const isDep =
+    mode ===
+    'DEP';
+
+
+  const canvasId =
+    isDep
+      ? 'depTaxiChart'
+      : 'arrTaxiChart';
+
+
+  if (isDep) {
+
+    if (
+      depTaxiChart
+    ) {
+
+      depTaxiChart.destroy();
+
     }
 
-    function shouldShowTaxiLabel(context, rows, mode) {
-      const datasetValue = context.dataset.data[context.dataIndex];
-      if (datasetValue === null || datasetValue === undefined) return false;
+  } else {
 
-      const row = rows[context.dataIndex];
-      const isDep = mode === 'DEP';
+    if (
+      arrTaxiChart
+    ) {
 
-      const min = numericOrNull(isDep ? row.depTaxiMin : row.arrTaxiMin);
-      const avg = numericOrNull(isDep ? row.avgDepTaxi : row.avgArrTaxi);
-      const max = numericOrNull(isDep ? row.depTaxiMax : row.arrTaxiMax);
+      arrTaxiChart.destroy();
 
-      if (min === null || avg === null || max === null) return false;
-
-      const yScale = context.chart.scales.y;
-      if (!yScale) return false;
-
-      let startValue = 0;
-      let endValue = 0;
-
-      if (context.datasetIndex === 0) {
-        startValue = 0;
-        endValue = min;
-      } else if (context.datasetIndex === 1) {
-        startValue = min;
-        endValue = avg;
-      } else {
-        startValue = avg;
-        endValue = max;
-      }
-
-      const pixelHeight = Math.abs(yScale.getPixelForValue(startValue) - yScale.getPixelForValue(endValue));
-
-      /* 너무 작은 구간은 숨김 */
-      if (pixelHeight < 18) return false;
-
-      /* 값이 너무 작은 segment도 숨김 */
-      if (Number(datasetValue) < 1.2 && context.datasetIndex !== 0) return false;
-
-      return true;
     }
 
-    function renderMonthlyTable(rows) {
-      const tbody = document.getElementById('monthlyBody');
-      tbody.innerHTML = '';
+  }
 
-      rows.forEach(row => {
-        const tr = document.createElement('tr');
-        const noData = row.flights === 0;
+
+  const getMin =
+    row =>
+      isDep
+        ? row.depTaxiMin
+        : row.arrTaxiMin;
+
+
+  const getAvg =
+    row =>
+      isDep
+        ? row.avgDepTaxi
+        : row.avgArrTaxi;
+
+
+  const getMax =
+    row =>
+      isDep
+        ? row.depTaxiMax
+        : row.arrTaxiMax;
+
+
+  /*
+   * 0 → MIN
+   */
+  const minData =
+    rows.map(
+      row =>
+        numericOrNull(
+          getMin(
+            row
+          )
+        )
+    );
+
+
+  /*
+   * MIN → AVG
+   */
+  const avgRange =
+    rows.map(
+      row => {
+
+        const min =
+          numericOrNull(
+            getMin(
+              row
+            )
+          );
+
+
+        const avg =
+          numericOrNull(
+            getAvg(
+              row
+            )
+          );
+
+
+        if (
+          min === null ||
+          avg === null
+        ) {
+
+          return null;
+
+        }
+
+
+        return Math.max(
+          0,
+          avg -
+          min
+        );
+
+      }
+    );
+
+
+  /*
+   * AVG → MAX
+   */
+  const maxRange =
+    rows.map(
+      row => {
+
+        const avg =
+          numericOrNull(
+            getAvg(
+              row
+            )
+          );
+
+
+        const max =
+          numericOrNull(
+            getMax(
+              row
+            )
+          );
+
+
+        if (
+          avg === null ||
+          max === null
+        ) {
+
+          return null;
+
+        }
+
+
+        return Math.max(
+          0,
+          max -
+          avg
+        );
+
+      }
+    );
+
+
+  const chart =
+    new Chart(
+      document
+        .getElementById(
+          canvasId
+        ),
+      {
+
+        type:
+          'bar',
+
+
+        data: {
+
+          labels:
+            rows.map(
+              row =>
+                row.label
+            ),
+
+
+          datasets: [
+
+            {
+
+              label:
+                'MIN',
+
+              data:
+                minData,
+
+              backgroundColor:
+                '#6fb7b2',
+
+              borderWidth:
+                0,
+
+              borderRadius: {
+
+                topLeft:
+                  0,
+
+                topRight:
+                  0,
+
+                bottomLeft:
+                  5,
+
+                bottomRight:
+                  5
+
+              },
+
+              stack:
+                'taxi',
+
+              maxBarThickness:
+                34
+
+            },
+
+
+            {
+
+              label:
+                'AVG',
+
+              data:
+                avgRange,
+
+              backgroundColor:
+                '#d7a54c',
+
+              borderWidth:
+                0,
+
+              borderRadius:
+                0,
+
+              stack:
+                'taxi',
+
+              maxBarThickness:
+                34
+
+            },
+
+
+            {
+
+              label:
+                'MAX',
+
+              data:
+                maxRange,
+
+              backgroundColor:
+                '#6388c6',
+
+              borderWidth:
+                0,
+
+              borderRadius: {
+
+                topLeft:
+                  5,
+
+                topRight:
+                  5,
+
+                bottomLeft:
+                  0,
+
+                bottomRight:
+                  0
+
+              },
+
+              stack:
+                'taxi',
+
+              maxBarThickness:
+                34
+
+            }
+
+          ]
+
+        },
+
+
+        options: {
+
+          responsive:
+            true,
+
+          maintainAspectRatio:
+            false,
+
+
+          interaction: {
+
+            mode:
+              'index',
+
+            intersect:
+              false
+
+          },
+
+
+          layout: {
+
+            /*
+             * 오른쪽 숫자 label 공간
+             */
+            padding: {
+
+              top:
+                15,
+
+              left:
+                5,
+
+              right:
+                30
+
+            }
+
+          },
+
+
+          plugins: {
+
+            /*
+             * 기본 bar 안의 datalabel은 제거.
+             * 커스텀 plugin이 오른쪽에 출력.
+             */
+            datalabels: {
+
+              display:
+                false
+
+            },
+
+
+            legend: {
+
+              display:
+                false
+
+            },
+
+
+            taxiBoundaryLabels: {
+
+              enabled:
+                true,
+
+              rows:
+                rows,
+
+              mode:
+                mode
+
+            },
+
+
+            tooltip: {
+
+              backgroundColor:
+                '#101e33',
+
+              titleColor:
+                '#f5f8fc',
+
+              bodyColor:
+                '#d0dbe7',
+
+              padding:
+                12,
+
+
+              callbacks: {
+
+                label:
+                  () =>
+                    null,
+
+
+                afterBody:
+                  items => {
+
+                    if (
+                      !items.length
+                    ) {
+
+                      return [];
+
+                    }
+
+
+                    const index =
+                      items[0]
+                        .dataIndex;
+
+
+                    const row =
+                      rows[
+                        index
+                      ];
+
+
+                    const total =
+                      isDep
+                        ? row.depTaxiTotal
+                        : row.arrTaxiTotal;
+
+
+                    const used =
+                      isDep
+                        ? row.depTaxiSamples
+                        : row.arrTaxiSamples;
+
+
+                    const excluded =
+                      isDep
+                        ? row.depTaxiOutliers
+                        : row.arrTaxiOutliers;
+
+
+                    return [
+
+                      `${mode} Taxi`,
+
+                      `MIN: ${minute(getMin(row))}`,
+
+                      `AVG: ${minute(getAvg(row))}`,
+
+                      `MAX: ${minute(getMax(row))}`,
+
+                      '',
+
+                      `Total samples: ${total || 0}`,
+
+                      `Used: ${used || 0}`,
+
+                      `Excluded: ${excluded || 0}`
+
+                    ];
+
+                  }
+
+              }
+
+            }
+
+          },
+
+
+          scales: {
+
+            x: {
+
+              stacked:
+                true,
+
+              grid: {
+
+                display:
+                  false
+
+              },
+
+              ticks: {
+
+                autoSkip:
+                  false,
+
+                maxRotation:
+                  0,
+
+                minRotation:
+                  0,
+
+                font: {
+
+                  size:
+                    12,
+
+                  weight:
+                    '600'
+
+                }
+
+              }
+
+            },
+
+
+            y: {
+
+              stacked:
+                true,
+
+              beginAtZero:
+                true,
+
+              grid: {
+
+                color:
+                  'rgba(255,255,255,.05)'
+
+              },
+
+              ticks: {
+
+                callback:
+                  value =>
+                    value +
+                    'm',
+
+                font: {
+
+                  size:
+                    13
+
+                }
+
+              }
+
+            }
+
+          }
+
+        }
+
+      }
+    );
+
+
+  if (isDep) {
+
+    depTaxiChart =
+      chart;
+
+  } else {
+
+    arrTaxiChart =
+      chart;
+
+  }
+
+}
+
+
+/* =========================================================
+   MONTHLY TABLE
+========================================================= */
+
+function renderMonthlyTable(
+  rows
+) {
+
+  const tbody =
+    document
+      .getElementById(
+        'monthlyBody'
+      );
+
+
+  tbody.innerHTML =
+    '';
+
+
+  rows.forEach(
+    row => {
+
+      const tr =
+        document
+          .createElement(
+            'tr'
+          );
+
+
+      const noData =
+        row.flights ===
+        0;
+
+
+      tr.innerHTML = `
+
+        <td>
+          ${escapeHtml(row.label)}
+        </td>
+
+        <td class="${noData ? 'no-data' : ''}">
+          ${number(row.flights)}
+        </td>
+
+        <td>
+          ${escapeHtml(row.avgFlightTime || '-')}
+        </td>
+
+        <td>
+          ${escapeHtml(row.avgBlockTime || '-')}
+        </td>
+
+        <td>
+          ${minute(row.depTaxiMin)}
+        </td>
+
+        <td>
+          ${minute(row.avgDepTaxi)}
+        </td>
+
+        <td>
+          ${minute(row.depTaxiMax)}
+        </td>
+
+        <td>
+          ${minute(row.arrTaxiMin)}
+        </td>
+
+        <td>
+          ${minute(row.avgArrTaxi)}
+        </td>
+
+        <td>
+          ${minute(row.arrTaxiMax)}
+        </td>
+
+      `;
+
+
+      tbody.appendChild(
+        tr
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   HISTORY
+========================================================= */
+
+function renderHistory(
+  rows
+) {
+
+  setText(
+    'recordCount',
+    `${rows.length} RECORDS`
+  );
+
+
+  const tbody =
+    document
+      .getElementById(
+        'historyBody'
+      );
+
+
+  tbody.innerHTML =
+    '';
+
+
+  rows
+    .slice()
+    .reverse()
+    .forEach(
+      row => {
+
+        const tr =
+          document
+            .createElement(
+              'tr'
+            );
+
 
         tr.innerHTML = `
-          <td>${escapeHtml(row.label)}</td>
-          <td class="${noData ? 'no-data' : ''}">${number(row.flights)}</td>
-          <td>${escapeHtml(row.avgFlightTime || '-')}</td>
-          <td>${escapeHtml(row.avgBlockTime || '-')}</td>
-          <td>${minute(row.depTaxiMin)}</td>
-          <td>${minute(row.avgDepTaxi)}</td>
-          <td>${minute(row.depTaxiMax)}</td>
-          <td>${minute(row.arrTaxiMin)}</td>
-          <td>${minute(row.avgArrTaxi)}</td>
-          <td>${minute(row.arrTaxiMax)}</td>
+
+          <td>
+            ${escapeHtml(row.date)}
+          </td>
+
+          <td>
+            ${escapeHtml(row.requester)}
+          </td>
+
+          <td>
+            ${escapeHtml(row.aircraft)}
+          </td>
+
+          <td>
+            ${escapeHtml(row.tail)}
+          </td>
+
+          <td class="${row.fltOutlier ? 'outlier' : ''}">
+            ${escapeHtml(row.fltTime)}
+          </td>
+
+          <td class="${row.blockOutlier ? 'outlier' : ''}">
+            ${escapeHtml(row.blockTime)}
+          </td>
+
+          <td class="${row.depTaxiOutlier ? 'outlier' : ''}">
+            ${minute(row.depTaxi)}
+          </td>
+
+          <td class="${row.arrTaxiOutlier ? 'outlier' : ''}">
+            ${minute(row.arrTaxi)}
+          </td>
+
+          <td>
+            ${number(row.rampOutFuel)}
+          </td>
+
+          <td>
+            ${number(row.fod)}
+          </td>
+
         `;
 
-        tbody.appendChild(tr);
-      });
-    }
 
-    function renderHistory(rows) {
-      setText('recordCount', `${rows.length} RECORDS`);
+        tbody.appendChild(
+          tr
+        );
 
-      const tbody = document.getElementById('historyBody');
-      tbody.innerHTML = '';
+      }
+    );
 
-      rows.slice().reverse().forEach(row => {
-        const tr = document.createElement('tr');
+}
 
-        tr.innerHTML = `
-          <td>${escapeHtml(row.date)}</td>
-          <td>${escapeHtml(row.requester)}</td>
-          <td>${escapeHtml(row.aircraft)}</td>
-          <td>${escapeHtml(row.tail)}</td>
-          <td class="${row.fltOutlier ? 'outlier' : ''}">${escapeHtml(row.fltTime)}</td>
-          <td class="${row.blockOutlier ? 'outlier' : ''}">${escapeHtml(row.blockTime)}</td>
-          <td class="${row.depTaxiOutlier ? 'outlier' : ''}">${minute(row.depTaxi)}</td>
-          <td class="${row.arrTaxiOutlier ? 'outlier' : ''}">${minute(row.arrTaxi)}</td>
-          <td>${number(row.rampOutFuel)}</td>
-          <td>${number(row.fod)}</td>
-        `;
 
-        tbody.appendChild(tr);
-      });
-    }
+/* =========================================================
+   DISPLAY
+========================================================= */
 
-    function showResults() {
-      document.getElementById('routeHeader').style.display = 'block';
-      document.getElementById('kpiGrid').style.display = 'grid';
-      document.getElementById('flightPanel').style.display = 'block';
-      document.getElementById('taxiGrid').style.display = 'grid';
-      document.getElementById('monthlyPanel').style.display = 'block';
-      document.getElementById('historyPanel').style.display = 'block';
-    }
+function showResults() {
 
-    function hideResults() {
-      [
-        'routeHeader',
-        'kpiGrid',
-        'flightPanel',
-        'taxiGrid',
-        'monthlyPanel',
-        'historyPanel'
-      ].forEach(id => {
-        document.getElementById(id).style.display = 'none';
-      });
-    }
+  document
+    .getElementById(
+      'routeHeader'
+    )
+    .style.display =
+      'block';
 
-    function setLoading(value) {
-      isLoading = value;
 
-      document.getElementById('loading').style.display =
-        value ? 'block' : 'none';
+  document
+    .getElementById(
+      'kpiGrid'
+    )
+    .style.display =
+      'grid';
 
-      document.getElementById('analyzeBtn').textContent =
-        value ? 'ANALYZING...' : 'ANALYZE';
 
-      setText('statusText', value ? 'Analyzing...' : 'System Ready');
+  document
+    .getElementById(
+      'flightPanel'
+    )
+    .style.display =
+      'block';
 
-      document.getElementById('statusDot').style.background =
-        value ? '#4d8cff' : '#41d398';
 
-      updateAnalyzeButton();
-    }
+  document
+    .getElementById(
+      'taxiGrid'
+    )
+    .style.display =
+      'grid';
 
-    function valueOf(id) {
-      return document.getElementById(id).value.trim();
-    }
 
-    function setText(id, value) {
-      document.getElementById(id).textContent = value ?? '';
-    }
+  document
+    .getElementById(
+      'monthlyPanel'
+    )
+    .style.display =
+      'block';
 
-    function numericOrNull(value) {
-      if (value === null || value === undefined || value === '') return null;
-      const n = Number(value);
-      return Number.isFinite(n) ? n : null;
-    }
 
-    function number(value) {
-      const n = numericOrNull(value);
-      if (n === null) return '-';
+  document
+    .getElementById(
+      'historyPanel'
+    )
+    .style.display =
+      'block';
 
-      return n.toLocaleString('en-US', {
-        maximumFractionDigits: 0
-      });
-    }
+}
 
-    function minute(value) {
-      const n = numericOrNull(value);
-      if (n === null) return '-';
 
-      return n.toFixed(1).replace('.0', '') + 'm';
-    }
+function hideResults() {
 
-    function compactMinute(value) {
-      const n = numericOrNull(value);
-      if (n === null) return '';
+  [
 
-      return n.toFixed(1).replace('.0', '');
-    }
+    'routeHeader',
 
-    function minToHHMM(value) {
-      const n = numericOrNull(value);
-      if (n === null) return '-';
+    'kpiGrid',
 
-      const total = Math.round(n);
-      const hours = Math.floor(total / 60);
-      const minutes = Math.abs(total % 60);
+    'flightPanel',
 
-      return hours + ':' + String(minutes).padStart(2, '0');
-    }
+    'taxiGrid',
 
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
-  </script>
+    'monthlyPanel',
+
+    'historyPanel'
+
+  ]
+    .forEach(
+      id => {
+
+        document
+          .getElementById(
+            id
+          )
+          .style.display =
+            'none';
+
+      }
+    );
+
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+function setLoading(
+  value
+) {
+
+  isLoading =
+    value;
+
+
+  document
+    .getElementById(
+      'loading'
+    )
+    .style.display =
+      value
+        ? 'block'
+        : 'none';
+
+
+  document
+    .getElementById(
+      'analyzeBtn'
+    )
+    .textContent =
+      value
+        ? 'ANALYZING...'
+        : 'ANALYZE';
+
+
+  setText(
+
+    'statusText',
+
+    value
+      ? 'Analyzing...'
+      : 'System Ready'
+
+  );
+
+
+  document
+    .getElementById(
+      'statusDot'
+    )
+    .style.background =
+      value
+        ? '#4d8cff'
+        : '#41d398';
+
+
+  updateAnalyzeButton();
+
+}
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function valueOf(
+  id
+) {
+
+  return document
+    .getElementById(
+      id
+    )
+    .value
+    .trim();
+
+}
+
+
+function setText(
+  id,
+  value
+) {
+
+  document
+    .getElementById(
+      id
+    )
+    .textContent =
+      value ?? '';
+
+}
+
+
+function numericOrNull(
+  value
+) {
+
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
+
+    return null;
+
+  }
+
+
+  const n =
+    Number(
+      value
+    );
+
+
+  return Number.isFinite(
+    n
+  )
+    ? n
+    : null;
+
+}
+
+
+function number(
+  value
+) {
+
+  const n =
+    numericOrNull(
+      value
+    );
+
+
+  if (
+    n === null
+  ) {
+
+    return '-';
+
+  }
+
+
+  return n
+    .toLocaleString(
+      'en-US',
+      {
+
+        maximumFractionDigits:
+          0
+
+      }
+    );
+
+}
+
+
+function minute(
+  value
+) {
+
+  const n =
+    numericOrNull(
+      value
+    );
+
+
+  if (
+    n === null
+  ) {
+
+    return '-';
+
+  }
+
+
+  return (
+    n
+      .toFixed(
+        1
+      )
+      .replace(
+        '.0',
+        ''
+      ) +
+    'm'
+  );
+
+}
+
+
+/*
+ * Taxi chart용:
+ * 숫자만
+ * 18.5 / 13 / 7.4
+ */
+function compactMinute(
+  value
+) {
+
+  const n =
+    numericOrNull(
+      value
+    );
+
+
+  if (
+    n === null
+  ) {
+
+    return '';
+
+  }
+
+
+  return n
+    .toFixed(
+      1
+    )
+    .replace(
+      '.0',
+      ''
+    );
+
+}
+
+
+function minToHHMM(
+  value
+) {
+
+  const n =
+    numericOrNull(
+      value
+    );
+
+
+  if (
+    n === null
+  ) {
+
+    return '-';
+
+  }
+
+
+  const total =
+    Math.round(
+      n
+    );
+
+
+  const hours =
+    Math.floor(
+      total /
+      60
+    );
+
+
+  const minutes =
+    Math.abs(
+      total %
+      60
+    );
+
+
+  return (
+    hours +
+    ':' +
+    String(
+      minutes
+    )
+      .padStart(
+        2,
+        '0'
+      )
+  );
+
+}
+
+
+function escapeHtml(
+  value
+) {
+
+  return String(
+    value ??
+    ''
+  )
+
+    .replace(
+      /&/g,
+      '&amp;'
+    )
+
+    .replace(
+      /</g,
+      '&lt;'
+    )
+
+    .replace(
+      />/g,
+      '&gt;'
+    )
+
+    .replace(
+      /"/g,
+      '&quot;'
+    )
+
+    .replace(
+      /'/g,
+      '&#039;'
+    );
+
+}
+
+</script>
+
 </body>
 </html>
