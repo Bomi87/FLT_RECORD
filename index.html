@@ -1192,7 +1192,7 @@ td {
       <select id="tail">
 
         <option value="">
-          SELECT TAIL
+          SELECT
         </option>
 
       </select>
@@ -4890,38 +4890,6 @@ function renderTaxiSummaryChart(
                   if (!info) {
 
                     return '';
-
-                  }
-
-
-                  /*
-                   * On mobile, identical adjacent labels (for example AVG=MAX)
-                   * are shown only once so text never stacks on top of itself.
-                   */
-                  if (isMobile && context.datasetIndex > 0) {
-
-                    const previousDataset =
-                      context.chart.data.datasets[
-                        context.datasetIndex - 1
-                      ];
-
-                    const previousInfo =
-                      previousDataset &&
-                      previousDataset.groupInfo
-                        ? previousDataset.groupInfo[
-                            context.dataIndex
-                          ]
-                        : null;
-
-                    if (
-                      previousInfo &&
-                      previousInfo.label === info.label &&
-                      previousInfo.count === info.count
-                    ) {
-
-                      return '';
-
-                    }
 
                   }
 
