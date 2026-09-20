@@ -2213,51 +2213,26 @@ function renderAll(
 
   /*
    * FLT TIME outlier rule:
-   * Threshold is selected automatically by valid FLT TIME sample count.
+   * Apply a fixed 1.5 × IQR separately by season.
    *
-   *   < 15 samples   -> 2.0 × IQR
-   *   15–29 samples  -> 1.75 × IQR
-   *   30+ samples    -> 1.5 × IQR
+   * Seasons:
+   *   DJF = Dec / Jan / Feb
+   *   MAM = Mar / Apr / May
+   *   JJA = Jun / Jul / Aug
+   *   SON = Sep / Oct / Nov
    *
    * Taxi outlier flags remain unchanged.
    */
-  /*
-   * FLT TIME outlier threshold changes automatically by sample size:
-   *   < 15 samples  -> 2.0 × IQR
-   *   15–29 samples -> 1.75 × IQR
-   *   30+ samples   -> 1.5 × IQR
-   */
-  const flightSampleCount =
-    history
-      .map(
-        row => flightTimeToMinutes(
-          row.fltTime
-        )
-      )
-      .filter(
-        value => value !== null
-      )
-      .length;
-
-
-  const flightIqrMultiplier =
-    flightSampleCount < 15
-      ? 2.0
-      : flightSampleCount < 30
-        ? 1.75
-        : 1.5;
-
-
   const flightIqrStats =
-    applyFlightTimeIqrRule(
+    applySeasonalFlightTimeIqrRule(
       history,
-      flightIqrMultiplier
+      1.5
     );
 
 
   /*
    * Rebuild monthly AVG FLT TIME from the raw history using the
-   * new 2.0 × IQR flight-time rule.
+   * seasonal 1.5 × IQR flight-time rule.
    */
   const monthlyWithFlightIqr =
     rebuildMonthlyFlightAverages(
@@ -2563,7 +2538,7 @@ function renderKPI(
 
 
 /* =========================================================
-   FLIGHT TIME OUTLIER — 2.0 × IQR
+   FLIGHT TIME OUTLIER — SEASONAL 1.5 × IQR
 ========================================================= */
 
 /*
@@ -2708,101 +2683,137 @@ function percentile(
 
 
 /*
- * Apply the FLT TIME outlier rule to the entire selected route sample.
- *
- * Rule:
- *   Lower bound = Q1 - multiplier × IQR
- *   Upper bound = Q3 + multiplier × IQR
- *
- * The multiplier is supplied dynamically according to sample size.
- *
- * This intentionally overwrites row.fltOutlier from the backend so that:
- *   - Flight History highlighting
- *   - AVG FLIGHT TIME KPI
- *   - Monthly Block Time
- * all use the same relaxed rule.
+ * Map month number to meteorological season.
  */
-function applyFlightTimeIqrRule(
-  history,
-  multiplier
+function seasonFromMonth(
+  month
 ) {
 
-  const samples =
-    history
-      .map(
-        row => ({
-          row:
-            row,
-
-          value:
-            flightTimeToMinutes(
-              row.fltTime
-            )
-        })
-      )
-      .filter(
-        item =>
-          item.value !== null
-      );
-
-
   if (
-    !samples.length
+    month === 12 ||
+    month === 1 ||
+    month === 2
   ) {
 
-    return {
-      q1: null,
-      q3: null,
-      iqr: null,
-      lower: null,
-      upper: null,
-      used: 0,
-      excluded: 0,
-      avg: null
-    };
+    return 'DJF';
 
   }
 
 
-  const sorted =
-    samples
-      .map(
-        item => item.value
-      )
-      .sort(
-        (a, b) =>
-          a - b
-      );
+  if (
+    month >= 3 &&
+    month <= 5
+  ) {
+
+    return 'MAM';
+
+  }
 
 
-  const q1 =
-    percentile(
-      sorted,
-      .25
-    );
+  if (
+    month >= 6 &&
+    month <= 8
+  ) {
+
+    return 'JJA';
+
+  }
 
 
-  const q3 =
-    percentile(
-      sorted,
-      .75
-    );
+  if (
+    month >= 9 &&
+    month <= 11
+  ) {
+
+    return 'SON';
+
+  }
 
 
-  const iqr =
-    q3 - q1;
+  return null;
+
+}
 
 
-  const lower =
-    q1 -
-    multiplier *
-    iqr;
+/*
+ * Apply FLT TIME outlier filtering separately by season.
+ *
+ * Rule inside each season:
+ *   Lower bound = Q1 - 1.5 × IQR
+ *   Upper bound = Q3 + 1.5 × IQR
+ *
+ * The resulting row.fltOutlier flag is then shared by:
+ *   - Flight History highlighting
+ *   - AVG FLIGHT TIME KPI
+ *   - Monthly Block Time
+ */
+function applySeasonalFlightTimeIqrRule(
+  history,
+  multiplier
+) {
+
+  const seasons = {
+    DJF: [],
+    MAM: [],
+    JJA: [],
+    SON: []
+  };
 
 
-  const upper =
-    q3 +
-    multiplier *
-    iqr;
+  history.forEach(
+    row => {
+
+      const value =
+        flightTimeToMinutes(
+          row.fltTime
+        );
+
+
+      const month =
+        monthNumberFromHistoryDate(
+          row.date
+        );
+
+
+      const season =
+        seasonFromMonth(
+          month
+        );
+
+
+      row.__fltMinutes =
+        value;
+
+
+      row.__fltSeason =
+        season;
+
+
+      row.fltOutlier =
+        false;
+
+
+      if (
+        value !== null &&
+        season &&
+        seasons[season]
+      ) {
+
+        seasons[season].push({
+          row:
+            row,
+
+          value:
+            value
+        });
+
+      }
+
+    }
+  );
+
+
+  const seasonStats = {};
 
 
   let used =
@@ -2817,77 +2828,145 @@ function applyFlightTimeIqrRule(
     0;
 
 
-  samples.forEach(
-    item => {
+  Object.keys(seasons)
+    .forEach(
+      season => {
 
-      const isOutlier =
-        item.value < lower ||
-        item.value > upper;
-
-
-      item.row.fltOutlier =
-        isOutlier;
+        const items =
+          seasons[season];
 
 
-      /*
-       * Store parsed minutes so all later calculations use
-       * exactly the same source value.
-       */
-      item.row.__fltMinutes =
-        item.value;
+        if (
+          !items.length
+        ) {
+
+          seasonStats[season] = {
+            q1: null,
+            q3: null,
+            iqr: null,
+            lower: null,
+            upper: null,
+            samples: 0,
+            used: 0,
+            excluded: 0
+          };
+
+          return;
+
+        }
 
 
-      if (isOutlier) {
+        const sorted =
+          items
+            .map(
+              item => item.value
+            )
+            .sort(
+              (a, b) =>
+                a - b
+            );
 
-        excluded += 1;
 
-      } else {
+        const q1 =
+          percentile(
+            sorted,
+            .25
+          );
 
-        used += 1;
-        sum += item.value;
+
+        const q3 =
+          percentile(
+            sorted,
+            .75
+          );
+
+
+        const iqr =
+          q3 - q1;
+
+
+        const lower =
+          q1 -
+          multiplier *
+          iqr;
+
+
+        const upper =
+          q3 +
+          multiplier *
+          iqr;
+
+
+        let seasonUsed =
+          0;
+
+
+        let seasonExcluded =
+          0;
+
+
+        items.forEach(
+          item => {
+
+            const isOutlier =
+              item.value < lower ||
+              item.value > upper;
+
+
+            item.row.fltOutlier =
+              isOutlier;
+
+
+            if (isOutlier) {
+
+              excluded += 1;
+              seasonExcluded += 1;
+
+            } else {
+
+              used += 1;
+              seasonUsed += 1;
+              sum += item.value;
+
+            }
+
+          }
+        );
+
+
+        seasonStats[season] = {
+          q1:
+            q1,
+
+          q3:
+            q3,
+
+          iqr:
+            iqr,
+
+          lower:
+            lower,
+
+          upper:
+            upper,
+
+          samples:
+            items.length,
+
+          used:
+            seasonUsed,
+
+          excluded:
+            seasonExcluded
+        };
 
       }
-
-    }
-  );
-
-
-  /*
-   * Rows without a valid FLT TIME should not be marked as outliers.
-   */
-  history.forEach(
-    row => {
-
-      if (
-        flightTimeToMinutes(
-          row.fltTime
-        ) === null
-      ) {
-
-        row.fltOutlier =
-          false;
-
-      }
-
-    }
-  );
+    );
 
 
   return {
-    q1:
-      q1,
-
-    q3:
-      q3,
-
-    iqr:
-      iqr,
-
-    lower:
-      lower,
-
-    upper:
-      upper,
+    multiplier:
+      multiplier,
 
     used:
       used,
@@ -2898,7 +2977,10 @@ function applyFlightTimeIqrRule(
     avg:
       used
         ? sum / used
-        : null
+        : null,
+
+    seasons:
+      seasonStats
   };
 
 }
@@ -2906,9 +2988,7 @@ function applyFlightTimeIqrRule(
 
 /*
  * Recalculate each calendar month's AVG FLT TIME using only
- * flight records that survive the dynamically selected IQR rule.
- *
- * The original monthly rows are retained so month labels/order stay unchanged.
+ * flight records that survive the seasonal 1.5 × IQR rule.
  */
 function rebuildMonthlyFlightAverages(
   monthlyRows,
@@ -3014,11 +3094,6 @@ function rebuildMonthlyFlightAverages(
             ? minToHHMM(avg)
             : '-',
 
-        /*
-         * This count is the number of FLT TIME samples actually used
-         * in the monthly average. Tooltip "Flights" is still counted
-         * separately from raw Flight History as requested.
-         */
         flightSamples:
           values.length
       };
