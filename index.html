@@ -2778,7 +2778,7 @@ function applyAirportSearchMode(dep, arr, history) {
   document.getElementById('flightPanel').style.display =
     singleAirport ? 'none' : 'block';
   document.getElementById('rawMaxLegend').style.display =
-    singleAirport ? 'flex' : 'none';
+    'flex';
   if (!singleAirport) return;
 
   const type = dep ? 'DEP' : 'ARR';
@@ -5312,6 +5312,22 @@ function renderTaxiSummaryChart(
     count: rawRelevantValues.filter(v => v === rawMaximum).length
   };
 
+  // With both airports selected, each group gets its own unfiltered maximum.
+  const rawMaxFor = samples => {
+    const valid = samples.filter(value => value >= 1 && value <= 60);
+    if (!valid.length) return {value: null, info: null};
+    const value = Math.max(...valid);
+    return {
+      value,
+      info: {
+        label: String(value),
+        count: valid.filter(v => v === value).length
+      }
+    };
+  };
+  const rawDepMax = rawMaxFor(depAllValues);
+  const rawArrMax = rawMaxFor(arrAllValues);
+
 
   const depExcluded =
     Math.max(
@@ -5463,17 +5479,21 @@ function renderTaxiSummaryChart(
 
             },
 
-            ...(isSingleAirport ? [{
+            ...[{
               label: 'RAW MAX',
-              data: [rawMaximum],
-              groupInfo: [rawMaxInfo],
+              data: dep && arr
+                ? [rawDepMax.value, rawArrMax.value]
+                : [rawMaximum],
+              groupInfo: dep && arr
+                ? [rawDepMax.info, rawArrMax.info]
+                : [rawMaxInfo],
               backgroundColor: '#d88989',
               borderWidth: 0,
               borderRadius: 5,
               maxBarThickness: isMobile ? 13 : 34,
               categoryPercentage: isMobile ? .70 : .58,
               barPercentage: isMobile ? .38 : .72
-            }] : [])
+            }]
 
           ]
 
@@ -5654,7 +5674,8 @@ function renderTaxiSummaryChart(
 
                     return [
                       '',
-                      isSingleAirport && (item.dataset.label === 'MAX' || item.dataset.label === 'RAW MAX')
+                      item.dataset.label === 'RAW MAX' ||
+                      (isSingleAirport && item.dataset.label === 'MAX')
                         ? `Samples at this value: ${info.count}`
                         : `Samples in this range: ${info.count}`
                     ];
