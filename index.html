@@ -2747,7 +2747,9 @@ function renderAll(
 
 
   renderHistory(
-    history
+    history,
+    dep,
+    arr
   );
 
   applyAirportSearchMode(dep, arr, history);
@@ -5967,7 +5969,9 @@ function taxiGroupedStats(
 ========================================================= */
 
 function renderHistory(
-  rows
+  rows,
+  dep,
+  arr
 ) {
 
   const tbody =
@@ -6175,11 +6179,11 @@ function renderHistory(
             ${escapeHtml(row.fltTime)}
           </td>
 
-          <td class="${row.depTaxiOutlier ? 'outlier' : ''}">
+          <td class="${(dep || !arr) && row.depTaxiOutlier ? 'outlier' : ''}">
             ${minute(row.depTaxi)}
           </td>
 
-          <td class="${row.arrTaxiOutlier ? 'outlier' : ''}">
+          <td class="${(arr || !dep) && row.arrTaxiOutlier ? 'outlier' : ''}">
             ${minute(row.arrTaxi)}
           </td>
 
