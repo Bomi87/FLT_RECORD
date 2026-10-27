@@ -353,6 +353,16 @@ select:focus {
   margin-bottom: 18px;
 }
 
+/* Single-airport layout: FLIGHTS and three taxi statistics. */
+.kpi-grid.single-airport-mode {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 760px) {
+  .kpi-grid.single-airport-mode {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .kpi {
   min-height: 130px;
 
@@ -2740,6 +2750,49 @@ function renderAll(
     history
   );
 
+  applyAirportSearchMode(dep, arr, history);
+
+}
+
+
+/* Hide route-specific figures when only one airport was entered. */
+function applyAirportSearchMode(dep, arr, history) {
+  const singleAirport = Boolean(dep) !== Boolean(arr);
+  const grid = document.getElementById('kpiGrid');
+  const cards = Array.from(grid.querySelectorAll(':scope > .kpi'));
+  const labels = ['FLIGHTS', 'AVG FLIGHT TIME', 'AVG BLOCK TIME',
+    'AVG DEP TAXI', 'AVG ARR TAXI'];
+
+  grid.classList.toggle('single-airport-mode', singleAirport);
+  cards.forEach((card, index) => {
+    card.style.display = singleAirport && index === 4 ? 'none' : '';
+    card.querySelector('.kpi-label').textContent = labels[index];
+  });
+  document.getElementById('flightPanel').style.display =
+    singleAirport ? 'none' : 'block';
+  if (!singleAirport) return;
+
+  const type = dep ? 'DEP' : 'ARR';
+  const key = dep ? 'depTaxi' : 'arrTaxi';
+  const flag = dep ? 'depTaxiOutlier' : 'arrTaxiOutlier';
+  const values = history.filter(row => !row[flag])
+    .map(row => numericOrNull(row[key]))
+    .filter(value => value !== null);
+  const stats = taxiGroupedStats(values, 3);
+  const specs = [
+    {index: 1, label: `MIN ${type} TAXI`, info: stats.min,
+      valueId: 'kpiFlight', subId: 'kpiFlightSub'},
+    {index: 2, label: `AVG ${type} TAXI`, info: stats.typical,
+      valueId: 'kpiBlock', subId: 'kpiBlockSub'},
+    {index: 3, label: `MAX ${type} TAXI`, info: stats.max,
+      valueId: 'kpiDepTaxi', subId: 'kpiDepTaxiSub'}
+  ];
+  specs.forEach(spec => {
+    cards[spec.index].querySelector('.kpi-label').textContent = spec.label;
+    setText(spec.valueId, minute(taxiGroupUpperBound(spec.info)));
+    setText(spec.subId,
+      spec.info ? `${spec.info.label}m · n=${spec.info.count}` : '-');
+  });
 }
 
 
@@ -5246,17 +5299,14 @@ function renderTaxiSummaryChart(
           'bar',
 
 
-        plugins: [
-          taxiDepArrDivider
-        ],
+        plugins: dep && arr ? [taxiDepArrDivider] : [],
 
 
         data: {
 
-          labels: [
-            `DEP (${dep})`,
-            `ARR (${arr})`
-          ],
+          labels: dep && arr
+            ? [`DEP (${dep})`, `ARR (${arr})`]
+            : [dep ? `DEP (${dep})` : `ARR (${arr})`],
 
 
           datasets: [
@@ -5266,15 +5316,13 @@ function renderTaxiSummaryChart(
               label:
                 'MIN',
 
-              data: [
-                groupBarValue(depStats.min),
-                groupBarValue(arrStats.min)
-              ],
+              data: dep && arr
+                ? [groupBarValue(depStats.min), groupBarValue(arrStats.min)]
+                : [groupBarValue(dep ? depStats.min : arrStats.min)],
 
-              groupInfo: [
-                depStats.min,
-                arrStats.min
-              ],
+              groupInfo: dep && arr
+                ? [depStats.min, arrStats.min]
+                : [dep ? depStats.min : arrStats.min],
 
               backgroundColor:
                 '#6fb7b2',
@@ -5302,15 +5350,13 @@ function renderTaxiSummaryChart(
               label:
                 'AVG',
 
-              data: [
-                groupBarValue(depStats.typical),
-                groupBarValue(arrStats.typical)
-              ],
+              data: dep && arr
+                ? [groupBarValue(depStats.typical), groupBarValue(arrStats.typical)]
+                : [groupBarValue(dep ? depStats.typical : arrStats.typical)],
 
-              groupInfo: [
-                depStats.typical,
-                arrStats.typical
-              ],
+              groupInfo: dep && arr
+                ? [depStats.typical, arrStats.typical]
+                : [dep ? depStats.typical : arrStats.typical],
 
               backgroundColor:
                 '#d7a54c',
@@ -5338,15 +5384,13 @@ function renderTaxiSummaryChart(
               label:
                 'MAX',
 
-              data: [
-                groupBarValue(depStats.max),
-                groupBarValue(arrStats.max)
-              ],
+              data: dep && arr
+                ? [groupBarValue(depStats.max), groupBarValue(arrStats.max)]
+                : [groupBarValue(dep ? depStats.max : arrStats.max)],
 
-              groupInfo: [
-                depStats.max,
-                arrStats.max
-              ],
+              groupInfo: dep && arr
+                ? [depStats.max, arrStats.max]
+                : [dep ? depStats.max : arrStats.max],
 
               backgroundColor:
                 '#6388c6',
