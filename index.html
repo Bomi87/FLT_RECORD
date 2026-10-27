@@ -6259,11 +6259,11 @@ function renderHistory(
             ${escapeHtml(row.arr || '')}
           </td>
 
-          <td class="${row.blockOutlier ? 'outlier' : ''}">
+          <td class="${dep && arr && row.blockOutlier ? 'outlier' : ''}">
             ${escapeHtml(row.blockTime)}
           </td>
 
-          <td class="${row.fltOutlier ? 'outlier' : ''}">
+          <td class="${dep && arr && row.fltOutlier ? 'outlier' : ''}">
             ${escapeHtml(row.fltTime)}
           </td>
 
