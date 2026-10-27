@@ -355,7 +355,7 @@ select:focus {
 
 /* Single-airport layout: FLIGHTS and three taxi statistics. */
 .kpi-grid.single-airport-mode {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 @media (max-width: 760px) {
   .kpi-grid.single-airport-mode {
@@ -1507,6 +1507,11 @@ td {
       <div class="taxi-legend-item">
         <span class="taxi-color taxi-color-max"></span>
         MAX
+      </div>
+
+      <div class="taxi-legend-item" id="rawMaxLegend" style="display:none">
+        <span class="taxi-color" style="background:#d88989"></span>
+        RAW MAX
       </div>
 
     </div>
@@ -2767,11 +2772,13 @@ function applyAirportSearchMode(dep, arr, history) {
 
   grid.classList.toggle('single-airport-mode', singleAirport);
   cards.forEach((card, index) => {
-    card.style.display = singleAirport && index === 4 ? 'none' : '';
+    card.style.display = '';
     card.querySelector('.kpi-label').textContent = labels[index];
   });
   document.getElementById('flightPanel').style.display =
     singleAirport ? 'none' : 'block';
+  document.getElementById('rawMaxLegend').style.display =
+    singleAirport ? 'flex' : 'none';
   if (!singleAirport) return;
 
   const type = dep ? 'DEP' : 'ARR';
@@ -2786,19 +2793,31 @@ function applyAirportSearchMode(dep, arr, history) {
   const filteredMax = values.length ? Math.max(...values) : null;
   const maxCount = filteredMax === null
     ? 0 : values.filter(v => v === filteredMax).length;
+  const rawValues = history.map(row => numericOrNull(row[key]))
+    .filter(value => value !== null && value >= 1 && value <= 60);
+  const rawMax = rawValues.length ? Math.max(...rawValues) : null;
+  const rawMaxCount = rawMax === null
+    ? 0 : rawValues.filter(v => v === rawMax).length;
   const specs = [
     {index: 1, label: `MIN ${type} TAXI`, info: stats.min,
       valueId: 'kpiFlight', subId: 'kpiFlightSub'},
     {index: 2, label: `AVG ${type} TAXI`, info: stats.typical,
       valueId: 'kpiBlock', subId: 'kpiBlockSub'},
     {index: 3, label: `MAX ${type} TAXI`, info: null,
-      valueId: 'kpiDepTaxi', subId: 'kpiDepTaxiSub'}
+      valueId: 'kpiDepTaxi', subId: 'kpiDepTaxiSub'},
+    {index: 4, label: `RAW MAX ${type} TAXI`, info: null,
+      valueId: 'kpiArrTaxi', subId: 'kpiArrTaxiSub'}
   ];
   specs.forEach(spec => {
     cards[spec.index].querySelector('.kpi-label').textContent = spec.label;
     if (spec.index === 3) {
       setText(spec.valueId, minute(filteredMax));
       setText(spec.subId, filteredMax === null ? '-' : `IQR filtered · n=${maxCount}`);
+      return;
+    }
+    if (spec.index === 4) {
+      setText(spec.valueId, minute(rawMax));
+      setText(spec.subId, rawMax === null ? '-' : `No IQR · n=${rawMaxCount}`);
       return;
     }
     setText(spec.valueId, minute(taxiGroupUpperBound(spec.info)));
@@ -5284,6 +5303,14 @@ function renderTaxiSummaryChart(
     label: String(actualMaximum),
     count: relevantValues.filter(v => v === actualMaximum).length
   };
+  const rawRelevantValues = (dep ? depAllValues : arrAllValues)
+    .filter(value => value >= 1 && value <= 60);
+  const rawMaximum = rawRelevantValues.length
+    ? Math.max(...rawRelevantValues) : null;
+  const rawMaxInfo = rawMaximum === null ? null : {
+    label: String(rawMaximum),
+    count: rawRelevantValues.filter(v => v === rawMaximum).length
+  };
 
 
   const depExcluded =
@@ -5434,7 +5461,19 @@ function renderTaxiSummaryChart(
               barPercentage:
                 isMobile ? .38 : .72
 
-            }
+            },
+
+            ...(isSingleAirport ? [{
+              label: 'RAW MAX',
+              data: [rawMaximum],
+              groupInfo: [rawMaxInfo],
+              backgroundColor: '#d88989',
+              borderWidth: 0,
+              borderRadius: 5,
+              maxBarThickness: isMobile ? 13 : 34,
+              categoryPercentage: isMobile ? .70 : .58,
+              barPercentage: isMobile ? .38 : .72
+            }] : [])
 
           ]
 
@@ -5571,6 +5610,8 @@ function renderTaxiSummaryChart(
                     const prefix =
                       context.dataset.label === 'AVG'
                         ? 'Most common range'
+                        : context.dataset.label === 'RAW MAX'
+                          ? 'Maximum without IQR'
                         : isSingleAirport && context.dataset.label === 'MAX'
                           ? 'Actual maximum'
                           : context.dataset.label + ' range';
@@ -5613,7 +5654,7 @@ function renderTaxiSummaryChart(
 
                     return [
                       '',
-                      isSingleAirport && item.dataset.label === 'MAX'
+                      isSingleAirport && (item.dataset.label === 'MAX' || item.dataset.label === 'RAW MAX')
                         ? `Samples at this value: ${info.count}`
                         : `Samples in this range: ${info.count}`
                     ];
