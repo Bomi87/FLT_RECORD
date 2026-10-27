@@ -2781,10 +2781,11 @@ function applyAirportSearchMode(dep, arr, history) {
     .map(row => numericOrNull(row[key]))
     .filter(value => value !== null);
   const stats = taxiGroupedStats(values, 3);
-  const rawValid = history.map(row => numericOrNull(row[key]))
-    .filter(value => value !== null && value >= 1 && value <= 60);
-  const rawMax = rawValid.length ? Math.max(...rawValid) : null;
-  const maxCount = rawMax === null ? 0 : rawValid.filter(v => v === rawMax).length;
+  // MAX uses the actual highest value remaining after the same IQR
+  // and operational validity checks used for MIN / AVG.
+  const filteredMax = values.length ? Math.max(...values) : null;
+  const maxCount = filteredMax === null
+    ? 0 : values.filter(v => v === filteredMax).length;
   const specs = [
     {index: 1, label: `MIN ${type} TAXI`, info: stats.min,
       valueId: 'kpiFlight', subId: 'kpiFlightSub'},
@@ -2796,8 +2797,8 @@ function applyAirportSearchMode(dep, arr, history) {
   specs.forEach(spec => {
     cards[spec.index].querySelector('.kpi-label').textContent = spec.label;
     if (spec.index === 3) {
-      setText(spec.valueId, minute(rawMax));
-      setText(spec.subId, rawMax === null ? '-' : `Actual maximum · n=${maxCount}`);
+      setText(spec.valueId, minute(filteredMax));
+      setText(spec.subId, filteredMax === null ? '-' : `IQR filtered · n=${maxCount}`);
       return;
     }
     setText(spec.valueId, minute(taxiGroupUpperBound(spec.info)));
@@ -5272,19 +5273,16 @@ function renderTaxiSummaryChart(
       3
     );
 
-  // In single-airport mode, show the actual maximum valid taxi time,
-  // even when IQR excludes it from the MIN / AVG statistics.
+  // In single-airport mode, MAX is the actual highest taxi time
+  // remaining after the same IQR filter used for MIN / AVG.
   const isSingleAirport = Boolean(dep) !== Boolean(arr);
-  const allRelevantValues = dep ? depAllValues : arrAllValues;
-  const validForMaximum = allRelevantValues.filter(
-    value => value >= 1 && value <= 60
-  );
-  const actualMaximum = validForMaximum.length
-    ? Math.max(...validForMaximum)
+  const relevantValues = dep ? depValues : arrValues;
+  const actualMaximum = relevantValues.length
+    ? Math.max(...relevantValues)
     : null;
   const actualMaxInfo = actualMaximum === null ? null : {
     label: String(actualMaximum),
-    count: validForMaximum.filter(v => v === actualMaximum).length
+    count: relevantValues.filter(v => v === actualMaximum).length
   };
 
 
