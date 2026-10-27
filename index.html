@@ -2781,16 +2781,25 @@ function applyAirportSearchMode(dep, arr, history) {
     .map(row => numericOrNull(row[key]))
     .filter(value => value !== null);
   const stats = taxiGroupedStats(values, 3);
+  const rawValid = history.map(row => numericOrNull(row[key]))
+    .filter(value => value !== null && value >= 1 && value <= 60);
+  const rawMax = rawValid.length ? Math.max(...rawValid) : null;
+  const maxCount = rawMax === null ? 0 : rawValid.filter(v => v === rawMax).length;
   const specs = [
     {index: 1, label: `MIN ${type} TAXI`, info: stats.min,
       valueId: 'kpiFlight', subId: 'kpiFlightSub'},
     {index: 2, label: `AVG ${type} TAXI`, info: stats.typical,
       valueId: 'kpiBlock', subId: 'kpiBlockSub'},
-    {index: 3, label: `MAX ${type} TAXI`, info: stats.max,
+    {index: 3, label: `MAX ${type} TAXI`, info: null,
       valueId: 'kpiDepTaxi', subId: 'kpiDepTaxiSub'}
   ];
   specs.forEach(spec => {
     cards[spec.index].querySelector('.kpi-label').textContent = spec.label;
+    if (spec.index === 3) {
+      setText(spec.valueId, minute(rawMax));
+      setText(spec.subId, rawMax === null ? '-' : `Actual maximum · n=${maxCount}`);
+      return;
+    }
     setText(spec.valueId, minute(taxiGroupUpperBound(spec.info)));
     setText(spec.subId,
       spec.info ? `${spec.info.label}m · n=${spec.info.count}` : '-');
@@ -5263,6 +5272,21 @@ function renderTaxiSummaryChart(
       3
     );
 
+  // In single-airport mode, show the actual maximum valid taxi time,
+  // even when IQR excludes it from the MIN / AVG statistics.
+  const isSingleAirport = Boolean(dep) !== Boolean(arr);
+  const allRelevantValues = dep ? depAllValues : arrAllValues;
+  const validForMaximum = allRelevantValues.filter(
+    value => value >= 1 && value <= 60
+  );
+  const actualMaximum = validForMaximum.length
+    ? Math.max(...validForMaximum)
+    : null;
+  const actualMaxInfo = actualMaximum === null ? null : {
+    label: String(actualMaximum),
+    count: validForMaximum.filter(v => v === actualMaximum).length
+  };
+
 
   const depExcluded =
     Math.max(
@@ -5388,11 +5412,11 @@ function renderTaxiSummaryChart(
 
               data: dep && arr
                 ? [groupBarValue(depStats.max), groupBarValue(arrStats.max)]
-                : [groupBarValue(dep ? depStats.max : arrStats.max)],
+                : [actualMaximum],
 
               groupInfo: dep && arr
                 ? [depStats.max, arrStats.max]
-                : [dep ? depStats.max : arrStats.max],
+                : [actualMaxInfo],
 
               backgroundColor:
                 '#6388c6',
@@ -5549,7 +5573,9 @@ function renderTaxiSummaryChart(
                     const prefix =
                       context.dataset.label === 'AVG'
                         ? 'Most common range'
-                        : context.dataset.label + ' range';
+                        : isSingleAirport && context.dataset.label === 'MAX'
+                          ? 'Actual maximum'
+                          : context.dataset.label + ' range';
 
 
                     return `${prefix}: ${info.label} min`;
@@ -5589,7 +5615,9 @@ function renderTaxiSummaryChart(
 
                     return [
                       '',
-                      `Samples in this range: ${info.count}`
+                      isSingleAirport && item.dataset.label === 'MAX'
+                        ? `Samples at this value: ${info.count}`
+                        : `Samples in this range: ${info.count}`
                     ];
 
                   }
