@@ -1147,7 +1147,7 @@ td {
 
       <label>
         DEPARTURE
-        <span class="required-mark">*</span>
+        <span class="required-mark" title="Departure 또는 Arrival 중 하나 필수">*</span>
       </label>
 
       <input
@@ -1169,7 +1169,7 @@ td {
 
       <label>
         ARRIVAL
-        <span class="required-mark">*</span>
+        <span class="required-mark" title="Departure 또는 Arrival 중 하나 필수">*</span>
       </label>
 
       <input
@@ -1565,6 +1565,10 @@ td {
 
           <th>TAIL</th>
 
+          <th>DEP</th>
+
+          <th>ARR</th>
+
           <th>BLOCK</th>
 
           <th>FLT TIME</th>
@@ -1602,7 +1606,7 @@ td {
   id="empty"
   class="empty"
 >
-  Departure, Arrival, Tail을 선택해주세요.
+  Departure 또는 Arrival 중 하나와 Tail을 선택해주세요.
 </div>
 
 
@@ -2132,8 +2136,9 @@ function isSearchReady() {
 
 
   return (
-    dep.length === 4 &&
-    arr.length === 4 &&
+    (dep.length === 4 || arr.length === 4) &&
+    (dep.length === 0 || dep.length === 4) &&
+    (arr.length === 0 || arr.length === 4) &&
     tail !== ''
   );
 
@@ -2442,26 +2447,13 @@ async function searchRoute() {
 
 
   if (
-    dep.length !==
-    4
+    (dep.length !== 0 && dep.length !== 4) ||
+    (arr.length !== 0 && arr.length !== 4) ||
+    (!dep && !arr)
   ) {
 
     alert(
-      'Departure ICAO를 입력해주세요.'
-    );
-
-    return;
-
-  }
-
-
-  if (
-    arr.length !==
-    4
-  ) {
-
-    alert(
-      'Arrival ICAO를 입력해주세요.'
+      'Departure 또는 Arrival ICAO를 최소 하나 입력해주세요 (4자리).'
     );
 
     return;
@@ -6085,7 +6077,7 @@ function renderHistory(
 
 
     monthTr.innerHTML = `
-      <td colspan="10">
+      <td colspan="12">
         ${monthNames[month]}
         <span class="history-month-count">
           ${monthRows.length} flights
@@ -6121,6 +6113,14 @@ function renderHistory(
 
           <td>
             ${escapeHtml(row.tail)}
+          </td>
+
+          <td>
+            ${escapeHtml(row.dep || '')}
+          </td>
+
+          <td>
+            ${escapeHtml(row.arr || '')}
           </td>
 
           <td class="${row.blockOutlier ? 'outlier' : ''}">
