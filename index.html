@@ -2731,10 +2731,12 @@ function renderAll(
   );
 
 
+  const taxiHistory = history.filter(isEligibleTaxiRoute);
+
   renderKPI(
     data.summary,
     flightIqrStats,
-    history
+    taxiHistory
   );
 
 
@@ -2745,7 +2747,7 @@ function renderAll(
 
 
   renderTaxiSummaryChart(
-    history,
+    taxiHistory,
     dep,
     arr
   );
@@ -2757,8 +2759,17 @@ function renderAll(
     arr
   );
 
-  applyAirportSearchMode(dep, arr, history);
+  applyAirportSearchMode(dep, arr, taxiHistory);
 
+}
+
+
+// Same-airport legs (e.g. RKSS -> RKSS) are kept in Flight History,
+// but excluded from every Taxi Time MIN / AVG / MAX / RAW MAX statistic.
+function isEligibleTaxiRoute(row) {
+  const departure = String(row.dep || '').trim().toUpperCase();
+  const arrival = String(row.arr || '').trim().toUpperCase();
+  return !(departure && arrival && departure === arrival);
 }
 
 
