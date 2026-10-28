@@ -2767,6 +2767,7 @@ function renderAll(
 // Same-airport legs (e.g. RKSS -> RKSS) are kept in Flight History,
 // but excluded from every Taxi Time MIN / AVG / MAX / RAW MAX statistic.
 function isEligibleTaxiRoute(row) {
+  if (row.taxiEligible === false) return false;
   const departure = String(row.dep || '').trim().toUpperCase();
   const arrival = String(row.arr || '').trim().toUpperCase();
   return !(departure && arrival && departure === arrival);
