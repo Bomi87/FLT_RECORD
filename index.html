@@ -299,6 +299,13 @@ select:focus {
 }
 
 
+/* FROM / TO: make the entire date field clickable on desktop and mobile. */
+.date-field,
+.date-field label,
+.date-field input[type="date"] {
+  cursor: pointer;
+}
+
 /* =========================================================
    LOADING
 ========================================================= */
@@ -2133,6 +2140,27 @@ function setupInputs() {
       'change',
       updateAnalyzeButton
     );
+
+  // FROM / TO: clicking anywhere in the field opens the native date picker.
+  ['fromDate', 'toDate'].forEach(id => {
+    const input = document.getElementById(id);
+    if (!input) return;
+    const field = input.closest('.date-field');
+    if (!field) return;
+
+    field.addEventListener('click', () => {
+      // showPicker must run synchronously inside a user gesture.
+      if (typeof input.showPicker === 'function') {
+        try {
+          input.showPicker();
+          return;
+        } catch (err) {
+          // Older browser/WebView: fall back to native input behavior.
+        }
+      }
+      input.focus();
+    });
+  });
 
 }
 
