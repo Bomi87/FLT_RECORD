@@ -945,13 +945,9 @@ td {
     touch-action: manipulation;
   }
 
-  /* DEP / ARR / TAIL on one row */
+  /* Mobile: DEP / ARR / TAIL, then FROM / TO, then ANALYZE */
   .search-grid {
-    grid-template-columns:
-      minmax(0, 1fr)
-      minmax(0, 1fr)
-      minmax(0, 1fr);
-
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 8px;
     margin-top: 22px;
   }
@@ -960,9 +956,24 @@ td {
     display: none;
   }
 
-  /* Hide date range on mobile only */
-  .date-field {
-    display: none;
+  .search-grid > .field:not(.date-field) {
+    grid-column: span 2;
+    min-width: 0;
+  }
+
+  .search-grid > .date-field {
+    display: block;
+    grid-column: span 3;
+    min-width: 0;
+  }
+
+  .date-field input[type="date"] {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   .field input,
